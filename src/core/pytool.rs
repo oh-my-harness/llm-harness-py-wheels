@@ -187,7 +187,88 @@ pub(crate) fn content_block_to_data_block(cb: &ContentBlock) -> Option<DataBlock
             media_type: media_type.clone(),
             data: data.clone(),
         }),
+        ContentBlock::Text { text } => Some(DataBlock::Text {
+            text: text.clone(),
+            mime_type: None,
+        }),
         _ => None,
+    }
+}
+
+/// Parse one dict-shaped content block into a `ContentBlock`.
+///
+/// Accepts the Qevos/legacy shapes so existing tools migrate without change:
+/// - `{"type": "text", "text": ...}`
+/// - `{"type": "image", "media_type": ..., "data": <base64>}` (Qevos style)
+/// - `{"type": "image", "url": ...}` / `{"type": "image_url", "url": ...}`
+/// - `{"type": "image_base64", "data": ..., "media_type"?}` — same as the
+///   `Attachment` constructor kinds
+/// - `{"type": "document", "name": ..., "media_type": ..., "data"/"url": ...}`
+pub(crate) fn dict_content_block(
+    item_dict: &Bound<'_, pyo3::types::PyDict>,
+) -> PyResult<Option<ContentBlock>> {
+    let block_type: String = item_dict
+        .get_item("type")?
+        .ok_or_else(|| pyo3::exceptions::PyValueError::new_err("content block missing 'type'"))?
+        .extract()?;
+    match block_type.as_str() {
+        "text" => {
+            let text: String = item_dict
+                .get_item("text")?
+                .ok_or_else(|| {
+                    pyo3::exceptions::PyValueError::new_err("text content block missing 'text'")
+                })?
+                .extract()?;
+            Ok(Some(ContentBlock::Text { text }))
+        }
+        "image" => {
+            if let Some(url) = item_dict.get_item("url")?.filter(|v| !v.is_none()) {
+                let url: String = url.extract()?;
+                return Ok(Some(ContentBlock::Image {
+                    source: ImageSource::Url { url },
+                }));
+            }
+            let data: String = item_dict
+                .get_item("data")?
+                .ok_or_else(|| {
+                    pyo3::exceptions::PyValueError::new_err(
+                        "image content block requires 'data' (base64) or 'url'",
+                    )
+                })?
+                .extract()?;
+            let media_type: String = item_dict
+                .get_item("media_type")?
+                .and_then(|v| v.extract().ok())
+                .unwrap_or_else(|| "image/png".to_string());
+            Ok(Some(ContentBlock::Image {
+                source: ImageSource::Base64 { media_type, data },
+            }))
+        }
+        // Constructor-style kinds: delegate to the shared converter so the
+        // accepted shapes stay identical to `image_url()` / `document_*()`.
+        "image_url" | "image_base64" | "document_url" | "document_base64" => {
+            let data: String = item_dict
+                .get_item("data")?
+                .or_else(|| item_dict.get_item("url").ok().flatten())
+                .ok_or_else(|| {
+                    pyo3::exceptions::PyValueError::new_err(
+                        "attachment content block missing 'data'/'url'",
+                    )
+                })?
+                .extract()?;
+            let name: Option<String> = item_dict
+                .get_item("name")?
+                .filter(|v| !v.is_none())
+                .and_then(|v| v.extract().ok());
+            let media_type: Option<String> = item_dict
+                .get_item("media_type")?
+                .filter(|v| !v.is_none())
+                .and_then(|v| v.extract().ok());
+            attachment_to_content_block(&block_type, &data, name, media_type)
+                .map(Some)
+                .map_err(pyo3::exceptions::PyValueError::new_err)
+        }
+        _other => Ok(None),
     }
 }
 
@@ -227,8 +308,96 @@ impl PyAttachment {
 
 #[cfg(test)]
 mod attachment_tests {
-    use super::attachment_to_content_block;
+    use super::{attachment_to_content_block, dict_content_block};
     use crate::core::pytool::{ContentBlock, ImageSource};
+    use pyo3::Python;
+    use pyo3::types::PyDict;
+
+    fn block_from_dict(py: Python<'_>, json: &str) -> Option<ContentBlock> {
+        let value = py
+            .eval(std::ffi::CString::new(json).unwrap().as_c_str(), None, None)
+            .unwrap();
+        let dict = value.cast::<PyDict>().unwrap();
+        dict_content_block(dict).unwrap()
+    }
+
+    #[test]
+    fn dict_qevos_image_block() {
+        Python::attach(|py| {
+            let b = block_from_dict(
+                py,
+                r#"{"type": "image", "media_type": "image/jpeg", "data": "AAAA"}"#,
+            )
+            .unwrap();
+            match b {
+                ContentBlock::Image {
+                    source: ImageSource::Base64 { media_type, data },
+                } => {
+                    assert_eq!(media_type, "image/jpeg");
+                    assert_eq!(data, "AAAA");
+                }
+                _ => panic!("expected base64 image"),
+            }
+        });
+    }
+
+    #[test]
+    fn dict_image_url_block() {
+        Python::attach(|py| {
+            for shape in [
+                r#"{"type": "image", "url": "https://x/y.png"}"#,
+                r#"{"type": "image_url", "url": "https://x/y.png"}"#,
+            ] {
+                let b = block_from_dict(py, shape).unwrap();
+                assert!(
+                    matches!(
+                        b,
+                        ContentBlock::Image {
+                            source: ImageSource::Url { .. }
+                        }
+                    ),
+                    "shape: {shape}"
+                );
+            }
+        });
+    }
+
+    #[test]
+    fn dict_document_block_delegates() {
+        Python::attach(|py| {
+            let b = block_from_dict(
+                py,
+                r#"{"type": "document_base64", "name": "d.pdf", "media_type": "application/pdf", "data": "AAAA"}"#,
+            )
+            .unwrap();
+            assert!(matches!(b, ContentBlock::Document { .. }));
+        });
+    }
+
+    #[test]
+    fn dict_unknown_type_returns_none() {
+        Python::attach(|py| {
+            let b = block_from_dict(py, r#"{"type": "audio", "data": "x"}"#);
+            assert!(b.is_none());
+        });
+    }
+
+    #[test]
+    fn dict_image_missing_data_and_url_errors() {
+        Python::attach(|py| {
+            let value = py
+                .eval(
+                    std::ffi::CString::new(r#"{"type": "image"}"#)
+                        .unwrap()
+                        .as_c_str(),
+                    None,
+                    None,
+                )
+                .unwrap();
+            let dict = value.cast::<PyDict>().unwrap();
+            assert!(dict_content_block(dict).is_err());
+        });
+    }
 
     #[test]
     fn image_url_block() {
@@ -366,30 +535,23 @@ fn parse_tool_result(obj: &Bound<'_, PyAny>) -> PyResult<ToolResult> {
                     continue;
                 }
                 let item_dict = item.cast::<PyDict>()?;
-                let block_type: String = item_dict
-                    .get_item("type")?
-                    .ok_or_else(|| {
-                        pyo3::exceptions::PyValueError::new_err("content block missing 'type'")
-                    })?
-                    .extract()?;
-                match block_type.as_str() {
-                    "text" => {
-                        let text: String = item_dict
-                            .get_item("text")?
-                            .ok_or_else(|| {
-                                pyo3::exceptions::PyValueError::new_err(
-                                    "text content block missing 'text'",
-                                )
-                            })?
-                            .extract()?;
-                        blocks.push(DataBlock::Text {
-                            text,
-                            mime_type: None,
-                        });
+                match dict_content_block(item_dict)? {
+                    Some(cb) => {
+                        if let Some(block) = content_block_to_data_block(&cb) {
+                            blocks.push(block);
+                        } else {
+                            return Err(pyo3::exceptions::PyValueError::new_err(
+                                "content block is not a valid image/document/text block",
+                            ));
+                        }
                     }
-                    other => {
+                    None => {
                         return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                            "unsupported content block type: {other}"
+                            "unsupported content block type: {} (hint: return a bare Attachment or list of Attachments for images/documents)",
+                            item_dict
+                                .get_item("type")?
+                                .and_then(|v| v.extract::<String>().ok())
+                                .unwrap_or_default()
                         )));
                     }
                 }

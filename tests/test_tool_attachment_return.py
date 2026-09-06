@@ -108,3 +108,92 @@ def test_report_duration_default_off():
     """不带 report_duration 时默认关闭（签名兼容）。"""
     tool = _make_tool(lambda args, ctx: "ok")
     assert tool.name == "test_tool"
+
+
+# ── dict content 块的 image/document 支持（issue #145）───────────────
+
+
+def test_dict_qevos_style_image_block():
+    """Qevos 风格 {"type":"image","media_type","data"} → image 块。"""
+    tool = _make_tool(
+        lambda args, ctx: {
+            "content": [
+                {"type": "text", "text": "screenshot"},
+                {"type": "image", "media_type": "image/png", "data": base64.b64encode(PNG_1X1).decode()},
+            ]
+        }
+    )
+    result = tool.drive({})
+    assert len(result["content"]) == 2
+    block = result["content"][1]
+    assert block["type"] == "image"
+    assert block["source"]["type"] == "base64"
+    assert block["source"]["media_type"] == "image/png"
+    assert base64.b64decode(block["source"]["data"]) == PNG_1X1
+
+
+def test_dict_image_block_defaults_png():
+    """缺 media_type → image/png。"""
+    tool = _make_tool(
+        lambda args, ctx: {"content": [{"type": "image", "data": "AAAA"}]}
+    )
+    result = tool.drive({})
+    block = result["content"][0]
+    assert block["type"] == "image"
+    assert block["source"]["media_type"] == "image/png"
+
+
+def test_dict_image_url_block():
+    """{"type":"image","url":...} → url image 块。"""
+    tool = _make_tool(
+        lambda args, ctx: {"content": [{"type": "image", "url": "https://example.com/x.png"}]}
+    )
+    result = tool.drive({})
+    block = result["content"][0]
+    assert block["type"] == "image"
+    assert block["source"]["type"] == "url"
+    assert block["source"]["url"] == "https://example.com/x.png"
+
+
+def test_dict_image_url_shorthand_type():
+    """{"type":"image_url","url":...} 构造器风格。"""
+    tool = _make_tool(
+        lambda args, ctx: {"content": [{"type": "image_url", "url": "https://example.com/x.png"}]}
+    )
+    result = tool.drive({})
+    assert result["content"][0]["source"]["type"] == "url"
+
+
+def test_dict_document_base64_block():
+    """{"type":"document_base64",...} → document 块。"""
+    tool = _make_tool(
+        lambda args, ctx: {
+            "content": [
+                {
+                    "type": "document_base64",
+                    "name": "d.pdf",
+                    "media_type": "application/pdf",
+                    "data": "AAAA",
+                }
+            ]
+        }
+    )
+    result = tool.drive({})
+    block = result["content"][0]
+    assert block["type"] == "document"
+    assert block["name"] == "d.pdf"
+    assert block["data"]["type"] == "base64"
+
+
+def test_dict_unsupported_type_still_errors_with_hint():
+    """未知类型仍报错，且提示 Attachment 迁移路径。"""
+    tool = _make_tool(lambda args, ctx: {"content": [{"type": "audio", "data": "x"}]})
+    with pytest.raises(RuntimeError, match="Attachment"):
+        tool.drive({})
+
+
+def test_dict_image_block_missing_data_and_url():
+    """image 块缺 data 和 url → 明确报错。"""
+    tool = _make_tool(lambda args, ctx: {"content": [{"type": "image"}]})
+    with pytest.raises(RuntimeError, match="data.*or.*url"):
+        tool.drive({})
