@@ -10,3 +10,4 @@ pub mod pysafety;
 pub mod pysourcetag;
 pub mod pystatuspanel;
 pub mod pytoolguard;
+pub mod pyvision;

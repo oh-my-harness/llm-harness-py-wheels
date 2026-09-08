@@ -3,26 +3,68 @@
   "scenarios": [
     {
       "id": "agent.prompt_streaming",
-      "aliases": ["01", "01_prompt_streaming", "agent.prompt-streaming"],
+      "aliases": [
+        "01",
+        "01_prompt_streaming",
+        "agent.prompt-streaming"
+      ],
       "legacy_path": "live-tests/examples/01_prompt_streaming.py",
       "title": "Prompt and streaming",
       "tier": "core",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["A configured provider can stream one prompt through a Senza harness."],
-      "does_not_prove": ["Streaming quality, latency, or provider portability under load."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "A configured provider can stream one prompt through a Senza harness."
+      ],
+      "does_not_prove": [
+        "Streaming quality, latency, or provider portability under load."
+      ]
     },
     {
       "id": "agent.tool_calling",
-      "aliases": ["02", "02_tool_calling", "agent.tool-calling"],
+      "aliases": [
+        "02",
+        "02_tool_calling",
+        "agent.tool-calling"
+      ],
       "legacy_path": "live-tests/examples/02_tool_calling.py",
       "title": "Tool discovery and calling",
       "tier": "core",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["Registered Python tools can be discovered and called by the model."],
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Registered Python tools can be discovered and called by the model."
+      ],
       "does_not_prove": [
         "Tool policy, isolation, or deterministic model selection.",
         "The final response reliably incorporates every callback result."
@@ -30,51 +72,136 @@
     },
     {
       "id": "agent.dynamic_config",
-      "aliases": ["03", "03_dynamic_config_multi_turn", "agent.dynamic-config-multi-turn"],
+      "aliases": [
+        "03",
+        "03_dynamic_config_multi_turn",
+        "agent.dynamic-config-multi-turn"
+      ],
       "legacy_path": "live-tests/examples/03_dynamic_config_multi_turn.py",
       "title": "Dynamic configuration and multi-turn state",
       "tier": "core",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["A running harness preserves history while configuration changes between turns."],
-      "does_not_prove": ["Concurrent configuration mutation is race-free."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "A running harness preserves history while configuration changes between turns."
+      ],
+      "does_not_prove": [
+        "Concurrent configuration mutation is race-free."
+      ]
     },
     {
       "id": "context.session_branch",
-      "aliases": ["04", "04_session_branch", "session.branching"],
+      "aliases": [
+        "04",
+        "04_session_branch",
+        "session.branching"
+      ],
       "legacy_path": "live-tests/examples/04_session_branch.py",
       "title": "Session persistence and branching",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["An in-memory session tree supports branch, navigation, summary, and deletion operations."],
-      "does_not_prove": ["Branches survive process restart or concurrent writers."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "An in-memory session tree supports branch, navigation, summary, and deletion operations."
+      ],
+      "does_not_prove": [
+        "Branches survive process restart or concurrent writers."
+      ]
     },
     {
       "id": "context.compaction",
-      "aliases": ["05", "05_compaction"],
+      "aliases": [
+        "05",
+        "05_compaction"
+      ],
       "legacy_path": "live-tests/examples/05_compaction.py",
       "title": "Automatic and manual compaction",
       "tier": "core",
       "maturity": "stable",
       "status": "active",
       "timeout_seconds": 600,
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["Configured thresholds and the manual API can trigger observable compaction."],
-      "does_not_prove": ["A compacted summary preserves every fact or instruction."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Configured thresholds and the manual API can trigger observable compaction."
+      ],
+      "does_not_prove": [
+        "A compacted summary preserves every fact or instruction."
+      ]
     },
     {
       "id": "context.skills_model_switch",
-      "aliases": ["06", "06_skills_model_switch", "agent.skills-model-switch"],
+      "aliases": [
+        "06",
+        "06_skills_model_switch",
+        "agent.skills-model-switch"
+      ],
       "legacy_path": "live-tests/examples/06_skills_model_switch.py",
       "title": "Skills and model switching",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["A skill can be attached and set_model can update the harness model selection."],
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "A skill can be attached and set_model can update the harness model selection."
+      ],
       "does_not_prove": [
         "The temporary model name in this script serves a Provider request.",
         "Prompt templates from the lower-level runtime are exposed in Senza."
@@ -82,418 +209,1277 @@
     },
     {
       "id": "agent.hooks",
-      "aliases": ["07", "07_hooks", "hooks.turn-tool-lifecycle"],
+      "aliases": [
+        "07",
+        "07_hooks",
+        "hooks.turn-tool-lifecycle"
+      ],
       "legacy_path": "live-tests/examples/07_hooks.py",
       "title": "Turn and tool lifecycle hooks",
       "tier": "core",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["Before and after hooks observe and intercept turn and tool-call boundaries."],
-      "does_not_prove": ["Every runtime hook or should-stop behavior is cleanly exposed in Python."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Before and after hooks observe and intercept turn and tool-call boundaries."
+      ],
+      "does_not_prove": [
+        "Every runtime hook or should-stop behavior is cleanly exposed in Python."
+      ]
     },
     {
       "id": "workflow.basic",
-      "aliases": ["08", "08_workflow", "workflow.linear"],
+      "aliases": [
+        "08",
+        "08_workflow",
+        "workflow.linear"
+      ],
       "legacy_path": "live-tests/examples/08_workflow.py",
       "title": "Linear multi-step workflow",
       "tier": "core",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["WorkflowEngine can execute two LLM steps and route with a judge."],
-      "does_not_prove": ["Recovery, branching, or executor-backed steps."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "WorkflowEngine can execute two LLM steps and route with a judge."
+      ],
+      "does_not_prove": [
+        "Recovery, branching, or executor-backed steps."
+      ]
     },
     {
       "id": "workflow.persistence",
-      "aliases": ["09", "09_workflow_recovery", "workflow.persistence-reload"],
+      "aliases": [
+        "09",
+        "09_workflow_recovery",
+        "workflow.persistence-reload"
+      ],
       "legacy_path": "live-tests/examples/09_workflow_recovery.py",
       "title": "Workflow persistence and completed-task reload",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["A completed workflow can be persisted and restored from TaskStore."],
-      "does_not_prove": ["Mid-run crash recovery or exactly-once replay."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "A completed workflow can be persisted and restored from TaskStore."
+      ],
+      "does_not_prove": [
+        "Mid-run crash recovery or exactly-once replay."
+      ]
     },
     {
       "id": "tools.sandbox",
-      "aliases": ["10", "10_sandbox", "execution.os-env-sandbox"],
+      "aliases": [
+        "10",
+        "10_sandbox",
+        "execution.os-env-sandbox"
+      ],
       "legacy_path": "live-tests/examples/10_sandbox.py",
       "title": "OS execution environment and sandbox gap",
       "tier": "advanced",
       "maturity": "partial",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["An OS-backed ExecutionEnv can be attached to a harness."],
-      "does_not_prove": ["Filesystem or process isolation; the macOS seatbelt factory is not implemented."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "An OS-backed ExecutionEnv can be attached to a harness."
+      ],
+      "does_not_prove": [
+        "Filesystem or process isolation; the macOS seatbelt factory is not implemented."
+      ]
     },
     {
       "id": "multi_agent.spawn",
-      "aliases": ["11", "11_spawn_subagent", "multi-agent.spawn"],
+      "aliases": [
+        "11",
+        "11_spawn_subagent",
+        "multi-agent.spawn"
+      ],
       "legacy_path": "live-tests/examples/11_spawn_subagent.py",
       "title": "Spawn and observe a sub-agent",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
       "timeout_seconds": 420,
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["Spawn infrastructure exposes spawn, await, and query tools to the main agent."],
-      "does_not_prove": ["Distributed execution or durable sub-agent recovery."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Spawn infrastructure exposes spawn, await, and query tools to the main agent."
+      ],
+      "does_not_prove": [
+        "Distributed execution or durable sub-agent recovery."
+      ]
     },
     {
       "id": "observability.audit",
-      "aliases": ["12", "12_tracing_audit", "observability.audit-lifecycle"],
+      "aliases": [
+        "12",
+        "12_tracing_audit",
+        "observability.audit-lifecycle"
+      ],
       "legacy_path": "live-tests/examples/12_tracing_audit.py",
       "title": "Hash-chain audit and lifecycle observations",
       "tier": "advanced",
       "maturity": "gap",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["The audit plugin writes a verifiable JSONL hash chain for tool calls."],
-      "does_not_prove": ["The Python surface wires runtime TraceExporter spans into a harness."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "The audit plugin writes a verifiable JSONL hash chain for tool calls."
+      ],
+      "does_not_prove": [
+        "The Python surface wires runtime TraceExporter spans into a harness."
+      ]
     },
     {
       "id": "observability.budget_pricing",
-      "aliases": ["13", "13_budget_pricing", "governance.budget-pricing"],
+      "aliases": [
+        "13",
+        "13_budget_pricing",
+        "governance.budget-pricing"
+      ],
       "legacy_path": "live-tests/examples/13_budget_pricing.py",
       "title": "Budget accounting and pricing",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
       "timeout_seconds": 180,
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["Pricing, usage ledgers, budget callbacks, and resets are wired end to end."],
-      "does_not_prove": ["Provider invoices match locally configured prices."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Pricing, usage ledgers, budget callbacks, and resets are wired end to end."
+      ],
+      "does_not_prove": [
+        "Provider invoices match locally configured prices."
+      ]
     },
     {
       "id": "safety.rules_approval",
-      "aliases": ["14", "14_rules_approval", "governance.rules-approval"],
+      "aliases": [
+        "14",
+        "14_rules_approval",
+        "governance.rules-approval"
+      ],
       "legacy_path": "live-tests/examples/14_rules_approval.py",
       "title": "Rule-chain approval policies",
       "tier": "quarantined",
       "maturity": "partial",
       "status": "needs-fix",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["The example documents allowlist, denylist, field, range, and rate-limit policies."],
-      "does_not_prove": ["All three model-driven policy prompts deterministically exercise their intended rule paths."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "The example documents allowlist, denylist, field, range, and rate-limit policies."
+      ],
+      "does_not_prove": [
+        "All three model-driven policy prompts deterministically exercise their intended rule paths."
+      ]
     },
     {
       "id": "safety.defaults_injection",
-      "aliases": ["15", "15_safety_injection", "safety.defaults-injection"],
+      "aliases": [
+        "15",
+        "15_safety_injection",
+        "safety.defaults-injection"
+      ],
       "legacy_path": "live-tests/examples/15_safety_injection.py",
       "title": "Safety defaults and injection filtering",
       "tier": "core",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["Two strategy plugins can deny lexical command risks and filter tool-output phrases."],
-      "does_not_prove": ["Semantic prompt-injection resistance or operating-system containment."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Two strategy plugins can deny lexical command risks and filter tool-output phrases."
+      ],
+      "does_not_prove": [
+        "Semantic prompt-injection resistance or operating-system containment."
+      ]
     },
     {
       "id": "context.status_panel",
-      "aliases": ["16", "16_status_panel", "ux.status-panel"],
+      "aliases": [
+        "16",
+        "16_status_panel",
+        "ux.status-panel"
+      ],
       "legacy_path": "live-tests/examples/16_status_panel.py",
       "title": "Status panel plugin",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["One plugin installs a todo tool and status/tool-count hooks together."],
-      "does_not_prove": ["Python callers can directly inspect the plugin's internal stores."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "One plugin installs a todo tool and status/tool-count hooks together."
+      ],
+      "does_not_prove": [
+        "Python callers can directly inspect the plugin's internal stores."
+      ]
     },
     {
       "id": "context.project_instructions",
-      "aliases": ["17", "17_source_instruction", "context.source-instructions"],
+      "aliases": [
+        "17",
+        "17_source_instruction",
+        "context.source-instructions"
+      ],
       "legacy_path": "live-tests/examples/17_source_instruction.py",
       "title": "Source tags and project instructions",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["Source tagging and project-instruction plugins compose on one harness."],
-      "does_not_prove": ["Tagged external content is trustworthy or instruction conflicts are resolved safely."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Source tagging and project-instruction plugins compose on one harness."
+      ],
+      "does_not_prove": [
+        "Tagged external content is trustworthy or instruction conflicts are resolved safely."
+      ]
     },
     {
       "id": "safety.loop_safety",
-      "aliases": ["18", "18_loop_safety", "safety.loop-guards"],
+      "aliases": [
+        "18",
+        "18_loop_safety",
+        "safety.loop-guards"
+      ],
       "legacy_path": "live-tests/examples/18_loop_safety.py",
       "title": "Loop-safety guard bundle",
       "tier": "advanced",
       "maturity": "partial",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["The default loop_safety plugin attaches and a benign tool run settles."],
-      "does_not_prove": ["Each guard triggers, because Python exposes only an opaque config dictionary."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "The default loop_safety plugin attaches and a benign tool run settles."
+      ],
+      "does_not_prove": [
+        "Each guard triggers, because Python exposes only an opaque config dictionary."
+      ]
     },
     {
       "id": "safety.memory_defense",
-      "aliases": ["19", "19_memory_defense", "memory.defense"],
+      "aliases": [
+        "19",
+        "19_memory_defense",
+        "memory.defense"
+      ],
       "legacy_path": "live-tests/examples/19_memory_defense.py",
       "title": "Memory-defense and tool-output guards",
       "tier": "advanced",
       "maturity": "partial",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["Memory-write and oversized tool-output guards can be installed together."],
-      "does_not_prove": ["All injection variants or filesystem mutation paths are blocked."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Memory-write and oversized tool-output guards can be installed together."
+      ],
+      "does_not_prove": [
+        "All injection variants or filesystem mutation paths are blocked."
+      ]
     },
     {
       "id": "plugin.notify",
-      "aliases": ["20", "20_notify", "ux.notifications"],
+      "aliases": [
+        "20",
+        "20_notify",
+        "ux.notifications"
+      ],
       "legacy_path": "live-tests/examples/20_notify.py",
       "title": "User notification plugin",
       "tier": "quarantined",
       "maturity": "gap",
       "status": "needs-fix",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["The notify plugin registers an LLM-callable notification tool."],
-      "does_not_prove": ["A message is delivered because Python cannot inject a NotificationChannel per run."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "The notify plugin registers an LLM-callable notification tool."
+      ],
+      "does_not_prove": [
+        "A message is delivered because Python cannot inject a NotificationChannel per run."
+      ]
     },
     {
       "id": "context.compaction_prompt",
-      "aliases": ["21", "21_context_aware_compact", "context.compaction-aware"],
+      "aliases": [
+        "21",
+        "21_context_aware_compact",
+        "context.compaction-aware"
+      ],
       "legacy_path": "live-tests/examples/21_context_aware_compact.py",
       "title": "Context-aware compaction prompt",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["A structured compaction prompt can drive automatic and manual compaction."],
-      "does_not_prove": ["The resulting summary is complete or objectively better."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "A structured compaction prompt can drive automatic and manual compaction."
+      ],
+      "does_not_prove": [
+        "The resulting summary is complete or objectively better."
+      ]
     },
     {
       "id": "tools.filesystem",
-      "aliases": ["22", "22_fs_tools"],
+      "aliases": [
+        "22",
+        "22_fs_tools"
+      ],
       "legacy_path": "live-tests/examples/22_fs_tools.py",
       "title": "Filesystem tool bundle",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["The filesystem plugin registers six tools backed by one OS environment and snapshot store."],
-      "does_not_prove": ["The OS environment is a security sandbox or detects every external edit."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "The filesystem plugin registers six tools backed by one OS environment and snapshot store."
+      ],
+      "does_not_prove": [
+        "The OS environment is a security sandbox or detects every external edit."
+      ]
     },
     {
       "id": "knowledge.infrastructure_wiring",
-      "aliases": ["23", "23_infra_integration", "memory.knowledge-recall-integration"],
+      "aliases": [
+        "23",
+        "23_infra_integration",
+        "memory.knowledge-recall-integration"
+      ],
       "legacy_path": "live-tests/examples/23_infra_integration.py",
       "title": "Knowledge, memory, and recall construction",
       "tier": "advanced",
       "maturity": "partial",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["Knowledge, memory, and session-recall components can be constructed on one harness."],
-      "does_not_prove": ["Memory write/recall or seeded prior-session retrieval works end to end."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Knowledge, memory, and session-recall components can be constructed on one harness."
+      ],
+      "does_not_prove": [
+        "Memory write/recall or seeded prior-session retrieval works end to end."
+      ]
     },
     {
       "id": "agent.basic_prompt",
-      "aliases": ["30", "30_basic_prompt", "agent.basic-prompt"],
+      "aliases": [
+        "30",
+        "30_basic_prompt",
+        "agent.basic-prompt"
+      ],
       "legacy_path": "live-tests/examples/30_basic_prompt.py",
       "title": "Basic prompt (duplicate teaching path)",
       "tier": "core",
       "maturity": "stable",
       "status": "duplicate",
       "duplicate_of": "agent.prompt_streaming",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["The minimal one-turn prompt path works through the shared live-test helper."],
-      "does_not_prove": ["A capability distinct from agent.prompt-streaming; this is retained as a legacy alias target."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "The minimal one-turn prompt path works through the shared live-test helper."
+      ],
+      "does_not_prove": [
+        "A capability distinct from agent.prompt-streaming; this is retained as a legacy alias target."
+      ]
     },
     {
       "id": "provider.multi_provider",
-      "aliases": ["31", "31_multi_provider", "provider.multi-provider"],
+      "aliases": [
+        "31",
+        "31_multi_provider",
+        "provider.multi-provider"
+      ],
       "legacy_path": "live-tests/examples/31_multi_provider.py",
       "title": "Multiple provider routing",
       "tier": "external",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"], "commands": [], "services": ["configured OpenAI-compatible and Anthropic endpoints"], "platforms": ["any"]},
-      "proves": ["Two explicitly configured providers can each be bound to a harness and invoked with a provider-compatible model."],
-      "does_not_prove": ["Cross-provider output equivalence or automatic failover."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [
+          "OPENAI_API_KEY",
+          "ANTHROPIC_API_KEY"
+        ],
+        "commands": [],
+        "services": [
+          "configured OpenAI-compatible and Anthropic endpoints"
+        ],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Two explicitly configured providers can each be bound to a harness and invoked with a provider-compatible model."
+      ],
+      "does_not_prove": [
+        "Cross-provider output equivalence or automatic failover."
+      ]
     },
     {
       "id": "plugin.composition",
-      "aliases": ["32", "32_plugins"],
+      "aliases": [
+        "32",
+        "32_plugins"
+      ],
       "legacy_path": "live-tests/examples/32_plugins.py",
       "title": "Reusable tool and hook plugins",
       "tier": "core",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["Tools and hooks can be bundled once and mounted on a harness or workflow step."],
-      "does_not_prove": ["A toy SQL regex is a production database security policy."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Tools and hooks can be bundled once and mounted on a harness or workflow step."
+      ],
+      "does_not_prove": [
+        "A toy SQL regex is a production database security policy."
+      ]
     },
     {
       "id": "agent.steering",
-      "aliases": ["33", "33_steering"],
+      "aliases": [
+        "33",
+        "33_steering"
+      ],
       "legacy_path": "live-tests/examples/33_steering.py",
       "title": "Steering and queued conversation control",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["Follow-up, next-turn, steer, continue, and idle/settled controls are callable in sequence."],
-      "does_not_prove": ["Concurrent callers have deterministic queue ordering."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Follow-up, next-turn, steer, continue, and idle/settled controls are callable in sequence."
+      ],
+      "does_not_prove": [
+        "Concurrent callers have deterministic queue ordering."
+      ]
     },
     {
       "id": "provider.anthropic",
-      "aliases": ["34", "34_anthropic_standalone"],
+      "aliases": [
+        "34",
+        "34_anthropic_standalone"
+      ],
       "legacy_path": "live-tests/examples/34_anthropic_standalone.py",
       "title": "Anthropic provider and serialization utilities",
       "tier": "external",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["ANTHROPIC_API_KEY", "OPENAI_API_KEY"]}, "env": [], "commands": [], "services": ["configured Anthropic or fallback LLM endpoint"], "platforms": ["any"]},
-      "proves": ["Anthropic-specific construction works when configured, with a provider-agnostic fallback for utility coverage."],
-      "does_not_prove": ["The Anthropic wire path ran when only OPENAI_API_KEY is configured."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "ANTHROPIC_API_KEY",
+            "OPENAI_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [
+          "configured Anthropic or fallback LLM endpoint"
+        ],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Anthropic-specific construction works when configured, with a provider-agnostic fallback for utility coverage."
+      ],
+      "does_not_prove": [
+        "The Anthropic wire path ran when only OPENAI_API_KEY is configured."
+      ]
     },
     {
       "id": "agent.code_review",
-      "aliases": ["35", "35_code_review", "agent.code-review"],
+      "aliases": [
+        "35",
+        "35_code_review",
+        "agent.code-review"
+      ],
       "legacy_path": "live-tests/examples/35_code_review.py",
       "title": "Tool-assisted code review",
       "tier": "core",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["A system prompt and custom source tool can produce a human-readable review."],
-      "does_not_prove": ["The review is complete, correct, or suitable as a CI gate."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "A system prompt and custom source tool can produce a human-readable review."
+      ],
+      "does_not_prove": [
+        "The review is complete, correct, or suitable as a CI gate."
+      ]
     },
     {
       "id": "knowledge.rag",
-      "aliases": ["36", "36_rag_qa", "knowledge.rag-qa"],
+      "aliases": [
+        "36",
+        "36_rag_qa",
+        "knowledge.rag-qa"
+      ],
       "legacy_path": "live-tests/examples/36_rag_qa.py",
       "title": "Local-document RAG question answering",
       "tier": "core",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["A local knowledge source supplies retrieval tools used in a QA turn."],
-      "does_not_prove": ["Retrieval recall, grounding quality, or citation correctness at scale."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "A local knowledge source supplies retrieval tools used in a QA turn."
+      ],
+      "does_not_prove": [
+        "Retrieval recall, grounding quality, or citation correctness at scale."
+      ]
     },
     {
       "id": "tools.mcp_blender",
-      "aliases": ["37", "37_mcp_blender", "tools.mcp-blender"],
+      "aliases": [
+        "37",
+        "37_mcp_blender",
+        "tools.mcp-blender"
+      ],
       "legacy_path": "live-tests/examples/37_mcp_blender.py",
       "title": "MCP Blender construction gap",
       "tier": "external",
       "maturity": "gap",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": ["uvx blender-mcp plus Blender addon on TCP 9876 for full E2E"], "platforms": ["any"]},
-      "proves": ["MCP server configs and non-connecting manager lifecycle inspection are exposed in Python."],
-      "does_not_prove": ["A server starts, Blender connects, tools are listed, or an MCP tool call completes."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [
+          "uvx blender-mcp plus Blender addon on TCP 9876 for full E2E"
+        ],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "MCP server configs and non-connecting manager lifecycle inspection are exposed in Python."
+      ],
+      "does_not_prove": [
+        "A server starts, Blender connects, tools are listed, or an MCP tool call completes."
+      ]
     },
     {
       "id": "workflow.conditional",
-      "aliases": ["38", "38_conditional_routing", "workflow.conditional-routing"],
+      "aliases": [
+        "38",
+        "38_conditional_routing",
+        "workflow.conditional-routing"
+      ],
       "legacy_path": "live-tests/examples/38_conditional_routing.py",
       "title": "Conditional workflow routing",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["A custom judge can select among multiple outgoing workflow steps."],
-      "does_not_prove": ["Declarative conditions over arbitrary LLM text; they evaluate structured output."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "A custom judge can select among multiple outgoing workflow steps."
+      ],
+      "does_not_prove": [
+        "Declarative conditions over arbitrary LLM text; they evaluate structured output."
+      ]
     },
     {
       "id": "workflow.executor",
-      "aliases": ["39", "39_executor_steps", "workflow.executor-steps"],
+      "aliases": [
+        "39",
+        "39_executor_steps",
+        "workflow.executor-steps"
+      ],
       "legacy_path": "live-tests/examples/39_executor_steps.py",
       "title": "Python executor workflow steps",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["A workflow can mix LLM and Python executor steps with prior output context."],
-      "does_not_prove": ["Executor isolation, replay safety, or distributed scheduling."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "A workflow can mix LLM and Python executor steps with prior output context."
+      ],
+      "does_not_prove": [
+        "Executor isolation, replay safety, or distributed scheduling."
+      ]
     },
     {
       "id": "workflow.pause_cancel",
-      "aliases": ["40", "40_pause_cancel", "workflow.pause-cancel"],
+      "aliases": [
+        "40",
+        "40_pause_cancel",
+        "workflow.pause-cancel"
+      ],
       "legacy_path": "live-tests/examples/40_pause_cancel.py",
       "title": "Workflow pause, resume, and cancel",
       "tier": "quarantined",
       "maturity": "partial",
       "status": "needs-fix",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["The example attempts workflow pause and resume control from a second thread."],
-      "does_not_prove": ["Pause/cancel interrupts an in-flight provider call or resumes without timing races."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "The example attempts workflow pause and resume control from a second thread."
+      ],
+      "does_not_prove": [
+        "Pause/cancel interrupts an in-flight provider call or resumes without timing races."
+      ]
     },
     {
       "id": "workflow.hitl",
-      "aliases": ["41", "41_human_in_the_loop", "workflow.human-in-loop"],
+      "aliases": [
+        "41",
+        "41_human_in_the_loop",
+        "workflow.human-in-loop"
+      ],
       "legacy_path": "live-tests/examples/41_human_in_the_loop.py",
       "title": "Human-in-the-loop event channel",
       "tier": "advanced",
       "maturity": "partial",
       "status": "active",
       "timeout_seconds": 240,
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["An in-process thread can submit an event to the wait-for-external-event tool."],
-      "does_not_prove": ["Human approval is durable, remote, authenticated, or recoverable after restart."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "An in-process thread can submit an event to the wait-for-external-event tool."
+      ],
+      "does_not_prove": [
+        "Human approval is durable, remote, authenticated, or recoverable after restart."
+      ]
     },
     {
       "id": "workflow.shell_executor",
-      "aliases": ["42", "42_shell_executor", "workflow.shell-executor"],
+      "aliases": [
+        "42",
+        "42_shell_executor",
+        "workflow.shell-executor"
+      ],
       "legacy_path": "live-tests/examples/42_shell_executor.py",
       "title": "Allowlisted shell executor",
       "tier": "quarantined",
       "maturity": "partial",
       "status": "needs-fix",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": ["echo", "python3"], "services": [], "platforms": ["darwin", "linux"]},
-      "proves": ["The workflow API can construct an allowlisted ShellExecutor with an OS environment."],
-      "does_not_prove": ["The hard-coded commands are portable or that allowlisting creates a security sandbox."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [
+          "echo",
+          "python3"
+        ],
+        "services": [],
+        "platforms": [
+          "darwin",
+          "linux"
+        ]
+      },
+      "proves": [
+        "The workflow API can construct an allowlisted ShellExecutor with an OS environment."
+      ],
+      "does_not_prove": [
+        "The hard-coded commands are portable or that allowlisting creates a security sandbox."
+      ]
     },
     {
       "id": "workflow.http_executor",
-      "aliases": ["43", "43_http_executor", "workflow.http-executor"],
+      "aliases": [
+        "43",
+        "43_http_executor",
+        "workflow.http-executor"
+      ],
       "legacy_path": "live-tests/examples/43_http_executor.py",
       "title": "Allowlisted HTTP executor",
       "tier": "external",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": ["https://httpbin.org"], "platforms": ["any"]},
-      "proves": ["An HTTP executor can be registered for a workflow step with an allowlisted host."],
-      "does_not_prove": ["The remote service is reliable or the executor is suitable for untrusted URLs."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [
+          "https://httpbin.org"
+        ],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "An HTTP executor can be registered for a workflow step with an allowlisted host."
+      ],
+      "does_not_prove": [
+        "The remote service is reliable or the executor is suitable for untrusted URLs."
+      ]
     },
     {
       "id": "workflow.composite_judge",
-      "aliases": ["44", "44_composite_judge", "workflow.composite-judge"],
+      "aliases": [
+        "44",
+        "44_composite_judge",
+        "workflow.composite-judge"
+      ],
       "legacy_path": "live-tests/examples/44_composite_judge.py",
       "title": "Composite judge and declarative fallback",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["Per-step judge callbacks compose with declarative edges over structured executor output."],
-      "does_not_prove": ["Free-form LLM text is automatically available as structured edge data."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Per-step judge callbacks compose with declarative edges over structured executor output."
+      ],
+      "does_not_prove": [
+        "Free-form LLM text is automatically available as structured edge data."
+      ]
     },
     {
       "id": "workflow.retry_replay",
-      "aliases": ["45", "45_hooks_retries", "workflow.hooks-retries-restore"],
+      "aliases": [
+        "45",
+        "45_hooks_retries",
+        "workflow.hooks-retries-restore"
+      ],
       "legacy_path": "live-tests/examples/45_hooks_retries.py",
       "title": "Workflow hooks, retries, and step restore",
       "tier": "advanced",
       "maturity": "stable",
       "status": "active",
       "timeout_seconds": 300,
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["Workflow hooks, judge-directed retry, persistence, and restore-from-step work together."],
-      "does_not_prove": ["Provider-error retries or side-effect idempotency across replay."]
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "Workflow hooks, judge-directed retry, persistence, and restore-from-step work together."
+      ],
+      "does_not_prove": [
+        "Provider-error retries or side-effect idempotency across replay."
+      ]
     },
     {
       "id": "workflow.data_analysis",
-      "aliases": ["46", "46_data_analysis", "workflow.data-analysis"],
+      "aliases": [
+        "46",
+        "46_data_analysis",
+        "workflow.data-analysis"
+      ],
       "legacy_path": "live-tests/examples/46_data_analysis.py",
       "title": "Data-analysis workflow pipeline",
       "tier": "quarantined",
       "maturity": "partial",
       "status": "needs-fix",
-      "requirements": {"provider": {"required": true, "any_of_env": ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]}, "env": [], "commands": [], "services": [], "platforms": ["any"]},
-      "proves": ["The example constructs a data-analysis workflow and separately registers a transform executor."],
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "The example constructs a data-analysis workflow and separately registers a transform executor."
+      ],
       "does_not_prove": [
         "The transform executor runs; no workflow step currently references it.",
         "The current shared-context and structured-output assumptions execute correctly end to end."
+      ]
+    },
+    {
+      "id": "inspector.interactive",
+      "aliases": [
+        "47",
+        "47_inspector_interact",
+        "inspector.interactive-human-loop"
+      ],
+      "legacy_path": "live-tests/examples/47_inspector_interact.py",
+      "title": "Inspector interactive human-in-the-loop",
+      "tier": "core",
+      "maturity": "stable",
+      "status": "active",
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "The Inspector Web UI serves interactive endpoints (inject, abort, usage, skills) while an agent runs, and streams events over WebSocket."
+      ],
+      "does_not_prove": [
+        "Multi-user concurrency or browser-side UI correctness under load."
+      ]
+    },
+    {
+      "id": "tools.web_code_tools",
+      "aliases": [
+        "48",
+        "48_web_code_tools",
+        "tools.web-code-tools"
+      ],
+      "legacy_path": "live-tests/examples/48_web_code_tools.py",
+      "title": "Web and code execution tools",
+      "tier": "core",
+      "maturity": "stable",
+      "status": "active",
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "create_web_tools_plugin (web_search + web_fetch) and create_code_exec_tool are discoverable and callable by the model in one run."
+      ],
+      "does_not_prove": [
+        "Web search result quality or code-exec sandboxing guarantees."
+      ]
+    },
+    {
+      "id": "strategy.vision_degrade",
+      "aliases": [
+        "49",
+        "49_vision_degrade",
+        "strategy.vision-degrade"
+      ],
+      "legacy_path": "live-tests/examples/49_vision_degrade.py",
+      "title": "Vision degrade auto-recovery",
+      "tier": "core",
+      "maturity": "stable",
+      "status": "active",
+      "requirements": {
+        "provider": {
+          "required": true,
+          "any_of_env": [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY"
+          ]
+        },
+        "env": [],
+        "commands": [],
+        "services": [],
+        "platforms": [
+          "any"
+        ]
+      },
+      "proves": [
+        "A provider rejecting image blocks can auto-recover via the vision_degrade hook."
+      ],
+      "does_not_prove": [
+        "Quality of the degraded response versus a vision-capable model."
       ]
     }
   ]

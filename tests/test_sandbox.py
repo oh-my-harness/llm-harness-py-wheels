@@ -50,3 +50,24 @@ def test_seatbelt_sandbox_start_succeeds():
     sandbox = senza.infra.seatbelt_sandbox()
     sandbox.start()
     assert sandbox.is_running() is True
+
+
+@pytest.mark.skipif(
+    platform.system() != "Darwin",
+    reason="SeatbeltSandbox is only available on macOS",
+)
+def test_seatbelt_sandbox_accepts_max_processes():
+    """max_processes is parsed and accepted (enforced on Linux bwrap only)."""
+    sandbox = senza.infra.seatbelt_sandbox({"max_processes": 100})
+    assert sandbox is not None
+    assert sandbox.is_running() is False
+
+
+@pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason="BwrapSandbox is only available on Linux",
+)
+def test_bwrap_sandbox_accepts_max_processes():
+    """max_processes is parsed and accepted on Linux (cgroup v2 pids limit)."""
+    sandbox = senza.infra.bwrap_sandbox({"max_processes": 100})
+    assert sandbox is not None

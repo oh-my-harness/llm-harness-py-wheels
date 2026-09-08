@@ -152,6 +152,7 @@ fn senza(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<crate::core::pyhooks::PyHookWrapper>()?;
     m.add_class::<crate::core::pytool::PyToolWrapper>()?;
     m.add_class::<crate::core::pytool::PyToolContext>()?;
+    m.add_class::<crate::core::pytool::PyAttachment>()?;
     m.add_function(wrap_pyfunction!(create_sync_tool, m)?)?;
     m.add_function(wrap_pyfunction!(create_tool, m)?)?;
     m.add_function(wrap_pyfunction!(create_judge, m)?)?;
@@ -185,6 +186,14 @@ fn senza(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     )?)?;
     m.add_function(wrap_pyfunction!(
         strategy::pyloopsafety::create_loop_safety_plugin,
+        m
+    )?)?;
+    m.add_function(wrap_pyfunction!(
+        strategy::pyvision::create_vision_degrade_hook,
+        m
+    )?)?;
+    m.add_function(wrap_pyfunction!(
+        strategy::pyvision::create_observation_shielding_hook,
         m
     )?)?;
     m.add_function(wrap_pyfunction!(
@@ -248,6 +257,17 @@ fn senza(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
         crate::core::pyeventstream::create_event_channel,
         m
     )?)?;
+    m.add_class::<crate::core::pyeventstream::PyHumanResponseHandle>()?;
+    m.add_class::<crate::core::pyeventstream::PyHumanApprovalTool>()?;
+    m.add_class::<crate::core::pyeventstream::PyHumanInputTool>()?;
+    m.add_function(wrap_pyfunction!(
+        crate::core::pyeventstream::create_human_approval_channel,
+        m
+    )?)?;
+    m.add_function(wrap_pyfunction!(
+        crate::core::pyeventstream::create_human_input_channel,
+        m
+    )?)?;
     m.add_function(wrap_pyfunction!(create_after_turn_hook, m)?)?;
     m.add_function(wrap_pyfunction!(create_before_run_hook, m)?)?;
     m.add_function(wrap_pyfunction!(create_after_provider_response_hook, m)?)?;
@@ -261,6 +281,7 @@ fn senza(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(create_final_answer_validator, m)?)?;
     m.add_function(wrap_pyfunction!(create_after_run_hook, m)?)?;
     m.add_function(wrap_pyfunction!(create_on_abort_hook, m)?)?;
+    m.add_function(wrap_pyfunction!(create_provider_error_hook, m)?)?;
     m.add_class::<crate::core::pybuilder::PyHarnessBuilder>()?;
     m.add_class::<crate::core::pybuilder::PyUsageLedger>()?;
     m.add_class::<crate::core::pyplugin::PyPluginWrapper>()?;
@@ -452,7 +473,7 @@ fn create_sync_tool<'py>(
     parameters_schema: &Bound<'py, PyAny>,
     callback: Py<PyAny>,
 ) -> PyResult<Bound<'py, crate::core::pytool::PyToolWrapper>> {
-    create_tool(py, name, description, parameters_schema, callback)
+    create_tool(py, name, description, parameters_schema, callback, false)
 }
 
 /// 从 Python callable 创建一个 `Tool`（统一入口，支持 sync 与 async 回调）。
@@ -460,13 +481,14 @@ fn create_sync_tool<'py>(
 /// 若 `callback` 是 `async def`，其 coroutine 将在 `spawn_blocking` 线程上
 /// 通过 `asyncio.run()` 执行——`select()` 内部释放 GIL，无需独立事件循环线程。
 #[pyfunction]
-#[pyo3(text_signature = "(name, description, parameters_schema, callback)")]
+#[pyo3(signature = (name, description, parameters_schema, callback, report_duration=false))]
 fn create_tool<'py>(
     py: Python<'py>,
     name: &str,
     description: &str,
     parameters_schema: &Bound<'py, PyAny>,
     callback: Py<PyAny>,
+    report_duration: bool,
 ) -> PyResult<Bound<'py, crate::core::pytool::PyToolWrapper>> {
     // Accept dict or str for parameters_schema.
     // If dict, convert to serde_json::Value directly via pyobject_to_value.
@@ -484,6 +506,7 @@ fn create_tool<'py>(
         description.to_string(),
         schema,
         callback,
+        report_duration,
     );
     let wrapper = crate::core::pytool::PyToolWrapper {
         tool: Arc::new(tool),
@@ -934,6 +957,26 @@ fn create_on_abort_hook<'py>(
         py,
         crate::core::pyhooks::PyHookWrapper {
             kind: crate::core::pyhooks::HookKind::OnAbort(Arc::new(hook)),
+        },
+    )
+    .map(|p| p.into_bound(py))
+}
+
+/// 从 Python callable 创建一个 `ProviderErrorHook`。
+///
+/// callback 签名：`callback(ctx: dict) -> str | None`
+/// 返回 `"retry"`（同轮重试）/ `"surface"` / `None`（默认原样上抛）。
+/// ctx 中的 `context` / `new_messages` 为只读快照。
+#[pyfunction]
+fn create_provider_error_hook<'py>(
+    py: Python<'py>,
+    callback: Py<PyAny>,
+) -> PyResult<Bound<'py, crate::core::pyhooks::PyHookWrapper>> {
+    let hook = crate::core::pyhooks::PyProviderErrorHook::new(callback);
+    Py::new(
+        py,
+        crate::core::pyhooks::PyHookWrapper {
+            kind: crate::core::pyhooks::HookKind::ProviderError(Arc::new(hook)),
         },
     )
     .map(|p| p.into_bound(py))

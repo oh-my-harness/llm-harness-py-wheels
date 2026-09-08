@@ -90,6 +90,7 @@ senza-live、pytest-strict adapters 和统一 result envelope 尚未完成。P1 
 | `44_composite_judge.py` | CompositeJudge | examples/runtime/09_composite_judge.py |
 | `45_hooks_retries.py` | hooks + 重试 | examples/runtime/10_hooks_retries.py |
 | `46_data_analysis.py` | 数据分析流水线拓扑（needs-fix） | examples/runtime/11_data_analysis.py |
+| `49_vision_degrade.py` | 视觉降级自愈（provider_error hook） | 无 runtime 对应 |
 
 ## 约定
 

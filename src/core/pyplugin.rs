@@ -29,6 +29,7 @@ pub struct PyPlugin {
     final_answer_validator: Vec<Arc<dyn llm_harness_types::FinalAnswerValidator>>,
     after_run: Vec<Arc<dyn llm_harness_types::AfterRunHook>>,
     on_abort: Vec<Arc<dyn llm_harness_types::OnAbortHook>>,
+    provider_error: Vec<Arc<dyn llm_harness_types::ProviderErrorHook>>,
 }
 
 impl PyPlugin {
@@ -50,6 +51,7 @@ impl PyPlugin {
             final_answer_validator: vec![],
             after_run: vec![],
             on_abort: vec![],
+            provider_error: vec![],
         };
         for kind in hooks {
             match kind {
@@ -67,6 +69,7 @@ impl PyPlugin {
                 HookKind::FinalAnswerValidator(h) => p.final_answer_validator.push(h),
                 HookKind::AfterRun(h) => p.after_run.push(h),
                 HookKind::OnAbort(h) => p.on_abort.push(h),
+                HookKind::ProviderError(h) => p.provider_error.push(h),
             }
         }
         p
@@ -113,6 +116,9 @@ impl Plugin for PyPlugin {
             .extend(self.final_answer_validator.iter().cloned());
         hooks.after_run.extend(self.after_run.iter().cloned());
         hooks.on_abort.extend(self.on_abort.iter().cloned());
+        hooks
+            .provider_error
+            .extend(self.provider_error.iter().cloned());
     }
 }
 

@@ -53,18 +53,18 @@ senza.providers.anthropic(api_key, base_url=None, messages_path=None)
 | `.tool(tool)` / `.plugin(plugin)` | 注册工具/插件 |
 | `.tools([tool, ...])` | 批量注册工具（等价多次 `.tool()`） |
 | `.env(env)` | 设置执行环境（`create_os_env(...)`），启用 bash/read/write/edit/grep/glob 工具 |
-| `.enable_spawn(model, provider, session_dir)` | 启用子 Agent 派发（主 Agent 注册 MessageBus + 5 个管理 tool；当前 `NoopPlugin` child 不自动挂载 Runtime 另定义的 2 个子侧通信 tool） |
+| `.enable_spawn(model, provider, session_dir, max_concurrent=None)` | 启用子 Agent 派发（主 Agent 注册 MessageBus + 5 个管理 tool；`max_concurrent` 限制并发子 Agent 数，`None` 不限） |
 | `.build()` | 返回 `AgentHarness` |
 
 ### AgentHarness
 
 | 方法 | 说明 |
 |------|------|
-| `.prompt_and_collect(text, timeout_ms=30000)` | 发送提示并收集事件（推荐） |
-| `.chat(text, timeout_ms=30000)` | 发送提示并返回拼接后的纯文本回复（`str`） |
-| `.chat_async(text, timeout_ms=30000)` | `chat()` 的非阻塞 async 版本（线程池执行） |
-| `.prompt(text)` | 发送提示（阻塞，需配合线程收集事件） |
-| `.prompt_async(text, timeout_ms=30000)` | `prompt_and_collect()` 的非阻塞 async 版本 |
+| `.prompt_and_collect(text, timeout_ms=30000, attachments=None)` | 发送提示并收集事件（推荐）；`attachments` 为多模态附件列表（1.2.4+） |
+| `.chat(text, timeout_ms=30000, attachments=None)` | 发送提示并返回拼接后的纯文本回复（`str`） |
+| `.chat_async(text, timeout_ms=30000, attachments=None)` | `chat()` 的非阻塞 async 版本（线程池执行） |
+| `.prompt(text, attachments=None)` | 发送提示（阻塞，需配合线程收集事件） |
+| `.prompt_async(text, timeout_ms=30000, attachments=None)` | `prompt_and_collect()` 的非阻塞 async 版本 |
 | `.collect_until_settled(timeout_ms=30000)` | 收集事件直到完成 |
 | `.events(timeout_ms=5000)` | 流式事件迭代器 |
 | `.inspect()` | 返回 harness 内部状态快照（dict） |
@@ -75,10 +75,11 @@ senza.providers.anthropic(api_key, base_url=None, messages_path=None)
 | `.set_max_tokens(n)` | 修改最大输出 token 数 |
 | `.set_tools(tools)` | 替换工具集 |
 | `.set_active_tools(tools)` | 限定下一轮工具子集（传 `None` 恢复全部） |
-| `.steer(text)` / `.follow_up(text)` | 运行中注入消息 |
-| `.next_turn(text)` | 开启下一轮对话 |
+| `.steer(text, attachments=None)` / `.follow_up(text, attachments=None)` | 运行中注入消息（可带多模态附件；Idle 阶段静默丢失） |
+| `.next_turn(text, attachments=None)` | 开启下一轮对话 |
 | `.continue_run()` | 继续运行（配合 steer/follow_up） |
 | `.compact()` | 手工触发 compaction，返回 `tokens_before` / `tokens_after` / `compressed_entries` |
+| `.session_metadata()` | 会话元数据 dict（`id` / `name` / `created_at` / `updated_at` / `model` / ...） |
 | `.usage()` | 查询成本统计 |
 | `.usage_ledger()` | 返回 UsageLedger 快照（dict） |
 | `.reset_usage()` | 重置成本统计 |
@@ -138,7 +139,8 @@ tool = senza.create_tool(
 - `callback`: `(args: dict, ctx: ToolContext) -> dict`。`args` 是**完整的参数字典**（如 `{"query": "cats"}`），回调内自行用 `args["query"]` 取值。`ctx` 可选——函数接受 2 参时传 `ctx`，1 参时只传 `args`。
   - ⚠️ **回调签名不是独立参数**：`def search(query: str)` 是**错误**的——`query` 会收到整个 dict 而非字符串。正确写法是 `def search(args: dict, ctx=None)` 然后内部 `args["query"]`，或使用下面的 `@senza.tool` 装饰器。
 - 返回 dict: `{"content": [ContentBlock...], "terminate": bool}`。`terminate=True` 停止 agent 循环。也接受纯字符串（自动包装为 text content）或不含 `content` 键的 dict（整体 JSON 序列化为 text）。
-- **Async 工具**: 传 `async def` 回调，通过 `asyncio.run()` 在阻塞线程上运行。
+- **多模态返回（1.2.4+）**：回调可返回 `Attachment`（裸值）、含 `Attachment` 的 list/tuple（元素为 `Attachment` 或 str）、或在 `content` 列表中混入 `Attachment`——自动转为 image/document 内容块，多模态模型可直接消费。
+- `create_tool(..., report_duration=True)`（1.2.4+）：在回传 LLM 的结果末尾附加执行耗时标注（如 `[duration: 812ms]`），让模型感知慢操作。默认关闭；仅当工具经 agent loop 的 HookedTool 包装时生效。
 
 #### `@senza.tool` 装饰器（便捷方式）
 
@@ -157,6 +159,32 @@ def search(query: str, limit: int = 10) -> str:
 - 无默认值的参数自动标记为 `required`
 - 支持 `async def`
 - docstring 自动作为工具描述
+
+### 多模态附件（1.2.4+）
+
+```python
+a1 = senza.image_url("https://example.com/i.png")
+a2 = senza.image_base64(raw_bytes, mime_type="image/jpeg")  # bytes 自动 base64
+a3 = senza.document_url("https://example.com/d.pdf")        # 按扩展名推断 media_type
+a4 = senza.document_file("./report.pdf", name=None)         # 读本地文件
+
+harness.chat("描述这张图", attachments=[a1])
+```
+
+| 构造函数 | 说明 |
+|---------|------|
+| `senza.image_url(url)` | 公网图片 URL |
+| `senza.image_base64(data, mime_type="image/png")` | 内联图片，`bytes` 自动编码 |
+| `senza.document_url(url, name=None)` | 文档 URL（media_type 按扩展名推断，未知扩展名报错） |
+| `senza.document_file(path, name=None)` | 本地文档（`.pdf`/`.txt`，读入内存） |
+
+端点需支持对应模态，否则 provider 返回 400。`Attachment` 对用户不透明；
+可作为工具回调返回值（见上）。`AgentHarness.get_messages()` 返回的 content
+含完整的 `{"type": "image"/"document", ...}` 块。
+
+> ⚠️ `senza.Agent`（test-utils mock）的 `prompt(attachments=...)` 带附件时
+> **替换整个 transcript**（底层 `prompt_with_messages`）；不带附件时追加。
+> 生产路径 `AgentHarness.prompt()` 始终追加。带附件多轮对话用 `AgentHarness`。
 
 ### 内置 fs 工具
 
@@ -332,7 +360,7 @@ def my_executor(ctx):
 | `cancelled` | `reason` |
 | `failed` | `error` |
 
-## Hooks（14 种）
+## Hooks（15 种）
 
 ```python
 senza.hooks.before_turn(cb)  # cb(ctx: dict) -> None
@@ -349,7 +377,18 @@ senza.hooks.prepare_next_turn(cb)  # cb(ctx: dict) -> Optional[dict]
 senza.hooks.final_answer_validator(cb)  # cb(ctx: dict) -> None | str | dict  # 提交前接受/拒绝
 senza.hooks.after_run(cb)  # cb() -> None  # run 结束后清理
 senza.hooks.on_abort(cb)  # cb() -> None  # abort 时同步执行
+senza.hooks.provider_error(cb)  # cb(ctx: dict) -> "retry" | "surface" | None
 ```
+
+### provider_error hook
+
+provider 非瞬态错误（重试耗尽后仍失败，如 text-only provider 拒绝含图片的
+请求）上抛前调用。返回 `"retry"` 则同轮重试，返回 `"surface"` / `None`
+则原样上抛。ctx 含 `run_id` / `started_at` / `turn_index` / `error` /
+`context`（只读快照）/ `new_messages`（只读快照）。注册方式：
+`builder.provider_error_hook(hook)`；多个 hook 按注册顺序执行，首个
+retry 生效。Python 回调不回写历史——需要修复历史时用 preset hook
+（`senza.strategy.vision_degrade()`）。
 
 ## Pricing
 
@@ -389,9 +428,27 @@ handle, wait_tool = senza.create_event_channel("review-task")
 # wait_tool 注册到 WorkflowEngine.with_external_tool(wait_tool)
 # LLM 调用 wait_for_external_event 时暂停，直到 handle.submit() 被调用
 handle.submit("approved", {"feedback": "Looks good!"})
+
+# 审批门：approve/deny 语义 + 超时回落默认值（fail-safe）
+handle, approval_tool = senza.create_human_approval_channel(
+    "deploy-gate", timeout_seconds=300.0, default="deny",
+)
+# LLM 调用 request_human_approval 时暂停；应答只需提供 decision：
+handle.submit("approve", {"decision": "approve"})
+
+# 自由输入：LLM 提问，人给任意 JSON 值，超时返回默认值
+handle, input_tool = senza.create_human_input_channel(
+    "clarify-1", timeout_seconds=300.0, default=None,
+)
+handle.submit("42", {"value": 42})
 ```
 
-## Strategy（10 个 Plugin 工厂 + 2 个 helper）
+说明：human channel 的 `handle.submit` 自动注入当前挂起请求的
+`request_id`（调用方无需关心 `tool_use_id`）；tool 尚未发起请求时
+submit 抛 `RuntimeError`。每个 channel 同一时刻支持一个挂起请求
+（human-in-the-loop 的典型形态），不支持多并发挂起。
+
+## Strategy（10 个 Plugin 工厂 + 2 个 preset hook + 2 个 helper）
 
 ```python
 senza.strategy.safety_defaults() -> Plugin
@@ -418,6 +475,13 @@ senza.strategy.tool_output_guard(
     env: ExecutionEnv, config: Optional[dict] = None,
 ) -> Plugin
 
+# preset hooks（返回 Hook，不是 Plugin）
+senza.strategy.vision_degrade() -> Hook  # 注册到 builder.provider_error_hook()
+senza.strategy.observation_shielding(config: Optional[dict] = None) -> Hook
+# observation_shielding 注册到 builder.hooks([...])；config 键：
+#   retained_turns: int = 5（保留最近 N 个 assistant turn 的观测）
+#   placeholder: str（旧观测的替换文本）
+
 # 辅助函数（不返回 Plugin）
 senza.strategy.webhook_stream(buffer: int) -> tuple[WebhookChannel, EventStream]
 senza.strategy.context_aware_compaction_prompt() -> tuple[str, str]
@@ -432,6 +496,8 @@ senza.strategy.context_aware_compaction_prompt() -> tuple[str, str]
 | `MemoryDefensePluginBuilder` | 自定义文件集的记忆防御构建器 |
 | `senza.strategy.injection_filter(patterns=None)` | 提示注入检测 |
 | `senza.strategy.source_tag(entries)` | 外部内容 `<source>` 标签包裹 |
+| `senza.strategy.vision_degrade()` | 视觉降级自愈（provider_error hook preset，issue #145） |
+| `senza.strategy.observation_shielding(config=None)` | 隐藏旧 tool observation（transform_context hook preset） |
 | `senza.strategy.project_instruction(env, config=None)` | 自动注入 CLAUDE.md 等项目指令 |
 | `senza.strategy.audit(sink_path, trace_id=None, task_id=None)` | 工具调用审计日志（JSONL） |
 | `senza.strategy.notify()` | LLM 主动通知用户 |
@@ -510,7 +576,9 @@ senza.JsonlAuditSink  # 类: append(record), validate(path) -> int
 # 内存 trace 导出器（测试用）
 senza.InMemoryTraceExporter  # 类: exported_span_count() -> int
 
-# 沙箱
+# 沙箱 config 键：fs_allowlist / fs_denylist / work_dir / max_memory_mb /
+# max_cpus / max_disk_mb / timeout_seconds / max_processes
+# （max_processes 仅 Linux bwrap 生效——cgroup v2 进程数限制；seatbelt 忽略）
 senza.infra.seatbelt_sandbox(config: Optional[dict] = None) -> Sandbox  # macOS
 senza.infra.bwrap_sandbox(config: Optional[dict] = None) -> Sandbox     # Linux
 ```

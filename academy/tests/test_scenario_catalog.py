@@ -10,8 +10,8 @@ from academy.scenarios.catalog import load_catalog
 def test_catalog_covers_all_legacy_scripts_and_expected_quarantine():
     catalog = load_catalog()
 
-    assert len(catalog) == 40
-    assert len({scenario.id for scenario in catalog}) == 40
+    assert len(catalog) == 43
+    assert len({scenario.id for scenario in catalog}) == 43
     assert {
         scenario.id for scenario in catalog if scenario.tier == "quarantined"
     } == {

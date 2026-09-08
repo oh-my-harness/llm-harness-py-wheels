@@ -3,6 +3,8 @@
 import os
 import tempfile
 
+import pytest
+
 import senza
 from base import live_model, make_harness, provider_or_skip, run_prompt
 
@@ -140,8 +142,6 @@ def _make_spawn_harness(provider, session_dir):
         "for results, and query_subagent to check status."
     )
     return builder.build()
-
-
 def test_spawn_async_completes():
     """spawn_agent tool is called and spawn completes."""
     provider = provider_or_skip()

@@ -73,7 +73,8 @@ pub(crate) fn wire_spawn(
         |_cwd: &Path, _bus, _agent_id: &str| Box::new(NoopPlugin) as Box<dyn Plugin>,
     )
     .env_factory(Arc::new(OsEnvFactory))
-    .session_factory(Arc::new(JsonlSessionFactory));
+    .session_factory(Arc::new(JsonlSessionFactory))
+    .max_concurrent(cfg.max_concurrent);
     let spawner = Arc::new(spawner);
 
     // 3. SpawnPlugin — replaces AsyncSpawnHook + IdleWatcher + AbortCascadeHook.

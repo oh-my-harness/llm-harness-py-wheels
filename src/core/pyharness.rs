@@ -41,6 +41,37 @@ fn phase_str(phase: HarnessPhase) -> &'static str {
     }
 }
 
+/// 从 text + 可选 Python 附件构造 `UserMessage`。
+///
+/// content 顺序：`[Text(text), *attachment_blocks]`。
+pub(crate) fn user_message_from_py(
+    text: &str,
+    attachments: Option<Vec<Bound<'_, crate::core::pytool::PyAttachment>>>,
+) -> llm_harness_types::AgentMessage {
+    use llm_harness_types::content::ContentBlock;
+    let mut content = Vec::with_capacity(1 + attachments.as_ref().map_or(0, Vec::len));
+    content.push(ContentBlock::Text {
+        text: text.to_string(),
+    });
+    if let Some(list) = attachments {
+        for att in &list {
+            content.push(att.borrow().block().clone());
+        }
+    }
+    llm_harness_types::AgentMessage::User(llm_harness_types::UserMessage {
+        content,
+        timestamp: chrono::Utc::now(),
+    })
+}
+
+/// 从 text + 可选 Python 附件构造 `RunRequest`。
+pub(crate) fn run_request_from_py(
+    text: &str,
+    attachments: Option<Vec<Bound<'_, crate::core::pytool::PyAttachment>>>,
+) -> RunRequest {
+    RunRequest::new(vec![user_message_from_py(text, attachments)])
+}
+
 /// 将 `AgentHarnessEvent` 转换为 Python dict。
 ///
 /// `Agent(AgentEvent)` 变体委托 `agent_event_to_dict`，其余变体生成
@@ -465,9 +496,15 @@ impl PyAgentHarness {
     /// 在 `prompt()` 之后再调用 `collect_until_settled()` 会拿到空列表——
     /// broadcast channel 不回放已发送的事件。如需同时发送 prompt 并收集事件，
     /// 请使用 `prompt_and_collect()`。
-    fn prompt(&self, py: Python<'_>, text: &str) -> PyResult<()> {
+    #[pyo3(signature = (text, attachments=None))]
+    fn prompt(
+        &self,
+        py: Python<'_>,
+        text: &str,
+        attachments: Option<Vec<Bound<'_, crate::core::pytool::PyAttachment>>>,
+    ) -> PyResult<()> {
         let harness = self.harness.clone();
-        let text = text.to_string();
+        let request = run_request_from_py(text, attachments);
         let access = self.effective_access();
         let rt = runtime(py);
         crate::shared::pyerror::block_on_with_signal_check(
@@ -475,7 +512,7 @@ impl PyAgentHarness {
             rt,
             async move {
                 harness
-                    .run_with_extension(RunRequest::from_text(text), access)
+                    .run_with_extension(request, access)
                     .await
                     .map_err(harness_error_to_pyerr)
             },
@@ -641,15 +678,16 @@ impl PyAgentHarness {
     ///
     /// 若 LLM 调用失败（网络错误、API key 无效等），抛出 `RuntimeError`。
     /// 若超时未收到 settled/aborted，中止 LLM 任务并返回已收集的事件。
-    #[pyo3(signature = (text, timeout_ms=30000))]
+    #[pyo3(signature = (text, timeout_ms=30000, attachments=None))]
     fn prompt_and_collect(
         &self,
         py: Python<'_>,
         text: &str,
         timeout_ms: u64,
+        attachments: Option<Vec<Bound<'_, crate::core::pytool::PyAttachment>>>,
     ) -> PyResult<Vec<Py<PyAny>>> {
         let harness = self.harness.clone();
-        let text = text.to_string();
+        let request = run_request_from_py(text, attachments);
         let rx = self.harness.subscribe();
         let access = self.effective_access();
         let handle = runtime(py).handle().clone();
@@ -659,12 +697,8 @@ impl PyAgentHarness {
             crate::shared::pyerror::detach_catch_panic_pyresult(py, move || {
                 // Spawn prompt as a background task so we can collect events concurrently.
                 let prompt_harness = harness.clone();
-                let prompt_text = text.clone();
-                let prompt_task = handle.spawn(async move {
-                    prompt_harness
-                        .run_with_extension(RunRequest::from_text(prompt_text), access)
-                        .await
-                });
+                let prompt_task = handle
+                    .spawn(async move { prompt_harness.run_with_extension(request, access).await });
 
                 let mut events = Vec::new();
                 let mut rx = rx;
@@ -802,14 +836,29 @@ impl PyAgentHarness {
 
     /// 向正在运行的 harness 插入一条 steering 消息。
     /// 当前 turn 完成后，steering 消息会被加入下一轮的 context。
-    fn steer(&self, text: &str) {
-        self.harness.steer(text);
+    #[pyo3(signature = (text, attachments=None))]
+    fn steer(
+        &self,
+        text: &str,
+        attachments: Option<Vec<Bound<'_, crate::core::pytool::PyAttachment>>>,
+    ) {
+        let msg = user_message_from_py(text, attachments);
+        // 与 runtime `steer(text)` 契约一致：Idle 阶段 channel 关闭，消息
+        // 静默丢失（错误被忽略）。需要检测丢失时先检查 phase() 再调用。
+        let _ = self.harness.steer_message(msg);
     }
 
     /// 向正在运行的 harness 插入一条 follow-up 消息。
     /// Follow-up 消息在当前 turn 结束后立即触发新一轮。
-    fn follow_up(&self, text: &str) {
-        self.harness.follow_up(text);
+    #[pyo3(signature = (text, attachments=None))]
+    fn follow_up(
+        &self,
+        text: &str,
+        attachments: Option<Vec<Bound<'_, crate::core::pytool::PyAttachment>>>,
+    ) {
+        let msg = user_message_from_py(text, attachments);
+        // runtime 契约：Idle 阶段 follow_up channel 关闭，消息静默丢失。
+        let _ = self.harness.follow_up_message(msg);
     }
 
     /// 继续上一次运行（不附加新消息）。
@@ -825,8 +874,14 @@ impl PyAgentHarness {
     }
 
     /// 发送下一条 user 消息并继续运行。
-    fn next_turn(&self, text: &str) {
-        self.harness.next_turn(text);
+    #[pyo3(signature = (text, attachments=None))]
+    fn next_turn(
+        &self,
+        text: &str,
+        attachments: Option<Vec<Bound<'_, crate::core::pytool::PyAttachment>>>,
+    ) {
+        let msg = user_message_from_py(text, attachments);
+        self.harness.next_turn_message(msg);
     }
     // ── Compaction ──────────────────────────────────────────────────────────
 
@@ -849,6 +904,26 @@ impl PyAgentHarness {
         dict.set_item("tokens_after", stats.tokens_after)?;
         dict.set_item("compressed_entries", stats.compressed_entries)?;
         Ok(dict.into_any().unbind())
+    }
+
+    /// 返回当前会话的元数据 dict（id/name/created_at/updated_at/model/...）。
+    fn session_metadata(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
+        let harness = self.harness.clone();
+        let rt = runtime(py);
+        let md = crate::shared::pyerror::block_on_with_signal_check(
+            py,
+            rt,
+            async move {
+                harness
+                    .session_metadata()
+                    .await
+                    .map_err(harness_error_to_pyerr)
+            },
+            200,
+        )?;
+        let json = serde_json::to_value(&md)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        value_to_pyobject(py, &json)
     }
 
     // ── Cost / Usage ────────────────────────────────────────────────────────

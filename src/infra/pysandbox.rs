@@ -25,6 +25,7 @@ use crate::shared::pyerror::detach_catch_panic_result;
 /// - `work_dir`: str | None
 /// - `max_memory_mb`: int | None
 /// - `max_cpus`: int | None
+/// - `max_processes`: int | None (enforced on Linux bwrap only; seatbelt ignores it)
 /// - `max_disk_mb`: int | None
 /// - `timeout_seconds`: float | None
 #[cfg_attr(not(any(target_os = "linux", target_os = "macos")), allow(dead_code))]
@@ -35,6 +36,7 @@ pub(crate) fn dict_to_sandbox_config(
     let mut fs_denylist = Vec::new();
     let net_allowlist = Vec::new();
     let mut max_cpus = None;
+    let mut max_processes = None;
     let mut max_memory_mb = None;
     let mut max_disk_mb = None;
     let mut timeout = None;
@@ -70,6 +72,11 @@ pub(crate) fn dict_to_sandbox_config(
         {
             max_cpus = Some(v.extract::<usize>()?);
         }
+        if let Some(v) = cfg.get_item("max_processes")?
+            && !v.is_none()
+        {
+            max_processes = Some(v.extract::<usize>()?);
+        }
         if let Some(v) = cfg.get_item("max_disk_mb")?
             && !v.is_none()
         {
@@ -89,6 +96,7 @@ pub(crate) fn dict_to_sandbox_config(
         net_allowlist,
         resource_limits: ResourceLimits {
             max_cpus,
+            max_processes,
             max_memory_mb,
             max_disk_mb,
             timeout,

@@ -24,7 +24,8 @@ pub struct PyProvider {
 /// `parse_reasoning_content` 解析 DeepSeek 风格 reasoning_content；
 /// `tolerant_keepalive` 容忍流中 keepalive 消息（DeepSeek 兼容）。
 #[pyfunction]
-#[pyo3(signature = (api_key, base_url=None, chat_path=None, thinking_scheme=None, parse_reasoning_content=true, tolerant_keepalive=true))]
+#[pyo3(signature = (api_key, base_url=None, chat_path=None, thinking_scheme=None, parse_reasoning_content=true, tolerant_keepalive=true, documents=false, documents_inline=false))]
+#[allow(clippy::too_many_arguments)]
 pub fn create_openai_provider(
     py: Python<'_>,
     api_key: &str,
@@ -33,10 +34,16 @@ pub fn create_openai_provider(
     thinking_scheme: Option<&str>,
     parse_reasoning_content: bool,
     tolerant_keepalive: bool,
+    documents: bool,
+    documents_inline: bool,
 ) -> PyResult<Py<PyProvider>> {
     let mut builder = OpenAIProvider::builder(api_key)
         .parse_reasoning_content(parse_reasoning_content)
-        .tolerant_keepalive(tolerant_keepalive);
+        .tolerant_keepalive(tolerant_keepalive)
+        .documents(documents || documents_inline);
+    if documents_inline {
+        builder = builder.documents_inline(true);
+    }
     if let Some(url) = base_url
         && !url.is_empty()
     {

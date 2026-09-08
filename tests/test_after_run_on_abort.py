@@ -5,7 +5,6 @@ import time
 
 import senza
 
-
 # ── Surface tests (factory existence) ──────────────────────────────────────
 
 
@@ -107,9 +106,7 @@ def test_on_abort_callback_invoked_during_run():
     def on_abort_cb():
         called.append(True)
 
-    provider = senza.providers.openai(
-        api_key="test-key", base_url="http://127.0.0.1:1/v1"
-    )
+    provider = senza.providers.openai(api_key="test-key", base_url="http://127.0.0.1:1/v1")
     harness = (
         senza.HarnessBuilder("gpt-4o")
         .provider("gpt-*", provider)

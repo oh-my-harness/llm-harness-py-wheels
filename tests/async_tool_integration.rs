@@ -34,6 +34,7 @@ async fn async_pytool_executes_without_deadlock() {
             "async echo".into(),
             schema,
             callback,
+            false,
         )) as Arc<dyn llm_harness_types::Tool>
     });
 

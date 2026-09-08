@@ -18,6 +18,8 @@ use serde_json::Value;
 use tokio_util::sync::CancellationToken;
 
 use crate::shared::value_conv::{pyobject_to_value, value_to_pyobject};
+use llm_harness_types::{BinarySource, ContentBlock, ImageSource};
+
 /// Python callable 包装为 `Tool` trait。
 pub struct PyTool {
     name: String,
@@ -25,10 +27,17 @@ pub struct PyTool {
     schema: Value,
     callback: Arc<Py<PyAny>>,
     is_async: bool,
+    report_duration: bool,
 }
 
 impl PyTool {
-    pub fn new(name: String, description: String, schema: Value, callback: Py<PyAny>) -> Self {
+    pub fn new(
+        name: String,
+        description: String,
+        schema: Value,
+        callback: Py<PyAny>,
+        report_duration: bool,
+    ) -> Self {
         let is_async = Python::attach(|py| {
             let inspect = pyo3::types::PyModule::import(py, "inspect")?;
             let is_coro: bool = inspect
@@ -46,6 +55,7 @@ impl PyTool {
             schema,
             callback: Arc::new(callback),
             is_async,
+            report_duration,
         }
     }
 }
@@ -58,6 +68,11 @@ impl Tool for PyTool {
     fn description(&self) -> &str {
         &self.description
     }
+
+    fn report_duration(&self) -> bool {
+        self.report_duration
+    }
+
     fn execute<'a>(
         &'a self,
         args: Value,
@@ -104,13 +119,177 @@ impl Tool for PyTool {
     }
 }
 
+/// 用户附件：包装 `ContentBlock::Image` 或 `ContentBlock::Document`。
+///
+/// 由 Python 侧构造函数（`image_url` / `image_base64` / `document_url` /
+/// `document_file`）创建，对用户不透明。`prompt(attachments=[...])` 与
+/// 工具回调返回值中消费。
+#[pyclass(name = "Attachment")]
+pub struct PyAttachment {
+    block: ContentBlock,
+}
+
+impl PyAttachment {
+    pub(crate) fn block(&self) -> &ContentBlock {
+        &self.block
+    }
+}
+
+/// 从 Python 构造函数参数构造 `ContentBlock`（纯转换，可单测）。
+pub(crate) fn attachment_to_content_block(
+    kind: &str,
+    data: &str,
+    name: Option<String>,
+    media_type: Option<String>,
+) -> Result<ContentBlock, String> {
+    match kind {
+        "image_url" => Ok(ContentBlock::Image {
+            source: ImageSource::Url {
+                url: data.to_string(),
+            },
+        }),
+        "image_base64" => Ok(ContentBlock::Image {
+            source: ImageSource::Base64 {
+                media_type: media_type.unwrap_or_else(|| "image/png".to_string()),
+                data: data.to_string(),
+            },
+        }),
+        "document_url" => Ok(ContentBlock::Document {
+            name,
+            media_type: media_type.ok_or("document requires media_type")?,
+            data: BinarySource::Url {
+                url: data.to_string(),
+            },
+        }),
+        "document_base64" => Ok(ContentBlock::Document {
+            name,
+            media_type: media_type.ok_or("document requires media_type")?,
+            data: BinarySource::Base64 {
+                data: data.to_string(),
+            },
+        }),
+        other => Err(format!("unknown attachment kind: {other}")),
+    }
+}
+
+/// `ContentBlock` → `DataBlock`（工具结果桥接用）。
+pub(crate) fn content_block_to_data_block(cb: &ContentBlock) -> Option<DataBlock> {
+    match cb {
+        ContentBlock::Image { source } => Some(DataBlock::Image {
+            source: source.clone(),
+        }),
+        ContentBlock::Document {
+            name,
+            media_type,
+            data,
+        } => Some(DataBlock::Document {
+            name: name.clone(),
+            media_type: media_type.clone(),
+            data: data.clone(),
+        }),
+        _ => None,
+    }
+}
+
+#[pymethods]
+impl PyAttachment {
+    #[new]
+    #[pyo3(signature = (kind, data, name, media_type))]
+    fn new(
+        kind: &str,
+        data: &str,
+        name: Option<String>,
+        media_type: Option<String>,
+    ) -> PyResult<Self> {
+        attachment_to_content_block(kind, data, name, media_type)
+            .map(|block| Self { block })
+            .map_err(pyo3::exceptions::PyValueError::new_err)
+    }
+
+    fn __repr__(&self) -> String {
+        match &self.block {
+            ContentBlock::Image { source } => match source {
+                ImageSource::Url { url } => format!("Attachment(image_url={url})"),
+                ImageSource::Base64 { media_type, .. } => {
+                    format!("Attachment(image_base64, {media_type})")
+                }
+            },
+            ContentBlock::Document { name, .. } => {
+                format!(
+                    "Attachment(document, {})",
+                    name.as_deref().unwrap_or("<unnamed>")
+                )
+            }
+            _ => "Attachment(?)".to_string(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod attachment_tests {
+    use super::attachment_to_content_block;
+    use crate::core::pytool::{ContentBlock, ImageSource};
+
+    #[test]
+    fn image_url_block() {
+        let b = attachment_to_content_block("image_url", "https://x/y.png", None, None).unwrap();
+        assert!(matches!(b, ContentBlock::Image { .. }));
+    }
+
+    #[test]
+    fn image_base64_defaults_png() {
+        let b = attachment_to_content_block("image_base64", "AAAA", None, None).unwrap();
+        match b {
+            ContentBlock::Image {
+                source: ImageSource::Base64 { media_type, .. },
+            } => assert_eq!(media_type, "image/png"),
+            _ => panic!("expected base64 image"),
+        }
+    }
+
+    #[test]
+    fn document_requires_media_type() {
+        assert!(
+            attachment_to_content_block("document_url", "https://x/d.pdf", None, None).is_err()
+        );
+    }
+
+    #[test]
+    fn document_base64_ok() {
+        let b = attachment_to_content_block(
+            "document_base64",
+            "AAAA",
+            Some("d.pdf".into()),
+            Some("application/pdf".into()),
+        )
+        .unwrap();
+        assert!(matches!(b, ContentBlock::Document { .. }));
+    }
+
+    #[test]
+    fn unknown_kind_errors() {
+        assert!(attachment_to_content_block("audio", "x", None, None).is_err());
+    }
+}
+
 /// 解析 Python 返回值为 `ToolResult`。
 ///
 /// 期望 dict 形如：
 /// ```python
 /// {"content": [{"type": "text", "text": "..."}], "details": ..., "terminate": False}
 /// ```
+///
+/// 另接受 `Attachment`（裸值 / list 元素 / content 列表元素）。
 fn parse_tool_result(obj: &Bound<'_, PyAny>) -> PyResult<ToolResult> {
+    // Bare Attachment return → single image/document block.
+    if let Ok(att) = obj.extract::<Bound<'_, PyAttachment>>() {
+        return match content_block_to_data_block(att.borrow().block()) {
+            Some(block) => Ok(ToolResult::full(vec![block], Value::Null, false)),
+            None => Err(pyo3::exceptions::PyValueError::new_err(
+                "attachment is not image/document",
+            )),
+        };
+    }
     // Accept plain string as shorthand for {"content": [{"type": "text", "text": <str>}]}
     if let Ok(s) = obj.extract::<String>() {
         return Ok(ToolResult::full(
@@ -118,6 +297,36 @@ fn parse_tool_result(obj: &Bound<'_, PyAny>) -> PyResult<ToolResult> {
             Value::Null,
             false,
         ));
+    }
+    // Sequence return (list or tuple): elements may be Attachment or str (mixed).
+    let as_list: Option<Bound<'_, PyList>> = match obj.cast::<PyList>() {
+        Ok(l) => Some(l.clone()),
+        Err(_) => obj
+            .cast::<pyo3::types::PyTuple>()
+            .ok()
+            .map(|t| PyList::new(obj.py(), t.iter()).expect("tuple to list conversion")),
+    };
+    if let Some(list) = as_list {
+        let mut blocks = Vec::with_capacity(list.len());
+        for item in list {
+            if let Ok(att) = item.extract::<Bound<'_, PyAttachment>>() {
+                match content_block_to_data_block(att.borrow().block()) {
+                    Some(block) => blocks.push(block),
+                    None => {
+                        return Err(pyo3::exceptions::PyValueError::new_err(
+                            "attachment is not image/document",
+                        ));
+                    }
+                }
+            } else if let Ok(s) = item.extract::<String>() {
+                blocks.push(DataBlock::text(s));
+            } else {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "list return items must be Attachment or str",
+                ));
+            }
+        }
+        return Ok(ToolResult::full(blocks, Value::Null, false));
     }
     let dict = obj.cast::<PyDict>()?;
 
@@ -144,6 +353,18 @@ fn parse_tool_result(obj: &Bound<'_, PyAny>) -> PyResult<ToolResult> {
             let content_list = v.cast::<PyList>()?;
             let mut blocks = Vec::with_capacity(content_list.len());
             for item in content_list {
+                // Attachment items are allowed alongside dicts.
+                if let Ok(att) = item.extract::<Bound<'_, PyAttachment>>() {
+                    match content_block_to_data_block(att.borrow().block()) {
+                        Some(block) => blocks.push(block),
+                        None => {
+                            return Err(pyo3::exceptions::PyValueError::new_err(
+                                "attachment is not image/document",
+                            ));
+                        }
+                    }
+                    continue;
+                }
                 let item_dict = item.cast::<PyDict>()?;
                 let block_type: String = item_dict
                     .get_item("type")?

@@ -34,6 +34,24 @@ harness = (
 )
 ```
 
+### 文档输入能力（1.2.4+）
+
+需要发送 PDF 等文档附件时，显式开启：
+
+```python
+provider = senza.providers.openai(
+    api_key="sk-...",
+    base_url="https://api.deepseek.com/v1",
+    documents=True,          # URL 文档（智谱系 file_url 风格）
+    # documents_inline=True, # OpenAI 生态 file part（data URL，隐含 documents=True）
+)
+
+harness.chat("总结这份文档", attachments=[senza.document_url("https://.../a.pdf")])
+```
+
+默认关闭——不支持文档的端点开启后会收到 400。Anthropic 协议原生转发
+document block，无需开关。
+
 ## Anthropic Provider
 
 ```python

@@ -23,10 +23,11 @@ use llm_harness_types::{
     AgentError, AgentMessage, AssistantMessage, BeforeCompactCtx, BeforeCompactDecision,
     BeforeCompactHook, BeforeProviderRequestCtx, BeforeProviderRequestHook, BeforeRunCtx,
     BeforeRunHook, BeforeRunResult, BeforeToolCallCtx, BeforeToolCallDecision, BeforeToolCallHook,
-    BeforeTurnCtx, BeforeTurnHook, CompactionResult, DataBlock, FinalAnswerValidationCtx,
-    FinalAnswerValidationError, FinalAnswerValidator, NextTurnDirective, OnAbortHook,
-    PrepareNextTurnCtx, PrepareNextTurnHook, RunContext, ShouldStopCtx, ShouldStopHook, StopReason,
-    ToolError, ToolFailure, ToolResult, TransformContextCtx, TransformContextHook,
+    BeforeTurnCtx, BeforeTurnHook, CompactionResult, DataBlock, ErrorDirective,
+    FinalAnswerValidationCtx, FinalAnswerValidationError, FinalAnswerValidator, NextTurnDirective,
+    OnAbortHook, PrepareNextTurnCtx, PrepareNextTurnHook, ProviderErrorCtx, ProviderErrorHook,
+    RunContext, ShouldStopCtx, ShouldStopHook, StopReason, ToolError, ToolFailure, ToolResult,
+    TransformContextCtx, TransformContextHook,
 };
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
@@ -1429,6 +1430,78 @@ impl OnAbortHook for PyOnAbortHook {
     }
 }
 
+// ── ProviderErrorHook ───────────────────────────────────────────────────────
+
+/// Python callable 包装为 `ProviderErrorHook`。
+///
+/// callback 签名：`callback(ctx: dict) -> str | None`
+/// 返回 `"retry"`（同轮重试）/ `"surface"` 或 `None`（默认原样上抛）。
+/// ctx 中的 `context` / `new_messages` 是只读快照——Python 回调不回写历史；
+/// 需要修复历史时使用 Rust 侧 preset hook（如 vision_degrade）。
+pub struct PyProviderErrorHook {
+    callback: Arc<Py<PyAny>>,
+    is_async: bool,
+}
+
+impl PyProviderErrorHook {
+    pub fn new(callback: Py<PyAny>) -> Self {
+        let is_async = detect_async(&callback);
+        Self {
+            callback: Arc::new(callback),
+            is_async,
+        }
+    }
+}
+
+impl ProviderErrorHook for PyProviderErrorHook {
+    fn on_provider_error<'a>(&'a self, ctx: ProviderErrorCtx<'a>) -> BoxFuture<'a, ErrorDirective> {
+        let cb = Arc::clone(&self.callback);
+        let is_async = self.is_async;
+        let (run_id, started_at) = run_context_fields(ctx.run);
+        let turn_index = ctx.turn_index;
+        let error = ctx.error.to_string();
+        // 只读快照：在进入 async block 前提取 owned 数据（ctx 是 &mut 借用）。
+        let system_prompt = ctx.context.system_prompt.clone();
+        let messages = ctx.context.messages.clone();
+        let new_messages = ctx.new_messages.to_vec();
+
+        Box::pin(async move {
+            let result = tokio::task::spawn_blocking(move || {
+                Python::attach(|py| {
+                    let dict = PyDict::new(py);
+                    dict.set_item("run_id", &run_id)?;
+                    dict.set_item("started_at", &started_at)?;
+                    dict.set_item("turn_index", turn_index)?;
+                    dict.set_item("error", &error)?;
+                    dict.set_item(
+                        "context",
+                        agent_context_to_dict(
+                            py,
+                            &AgentContext {
+                                system_prompt,
+                                messages,
+                            },
+                        )?,
+                    )?;
+                    dict.set_item("new_messages", agent_messages_to_list(py, &new_messages)?)?;
+                    let raw = call_callback_with_mode(py, &cb, (dict,), is_async)?;
+                    // "retry" → Retry；其余（"surface"、None、其他）→ Surface。
+                    let directive = raw
+                        .extract::<String>()
+                        .ok()
+                        .is_some_and(|s| s.eq_ignore_ascii_case("retry"));
+                    Ok::<bool, PyErr>(directive)
+                })
+            })
+            .await;
+            match result {
+                Ok(Ok(true)) => ErrorDirective::Retry,
+                _ => ErrorDirective::Surface,
+            }
+        })
+    }
+}
+
 // ── Python 包装类 ───────────────────────────────────────────────────────────
 
 /// 所有 hook trait 的枚举包装。
@@ -1448,6 +1521,7 @@ pub enum HookKind {
     FinalAnswerValidator(Arc<dyn FinalAnswerValidator>),
     AfterRun(Arc<dyn AfterRunHook>),
     OnAbort(Arc<dyn OnAbortHook>),
+    ProviderError(Arc<dyn ProviderErrorHook>),
 }
 
 /// 持有任意 hook trait 对象的不透明 Python 包装。
@@ -1482,6 +1556,17 @@ impl PyHookWrapper {
         }
     }
 
+    /// 提取 `ProviderErrorHook`，类型不匹配时返回 Python 异常。
+    pub fn as_provider_error_hook(&self) -> PyResult<Arc<dyn ProviderErrorHook>> {
+        match &self.kind {
+            HookKind::ProviderError(h) => Ok(h.clone()),
+            other => Err(pyo3::exceptions::PyTypeError::new_err(format!(
+                "expected a ProviderError hook, got {}",
+                other.kind_name()
+            ))),
+        }
+    }
+
     /// 将内部 hook 按 kind 推入对应的 `HarnessHooks` 向量。
     pub fn push_into(&self, hooks: &mut llm_harness_agent::HarnessHooks) {
         match &self.kind {
@@ -1499,6 +1584,7 @@ impl PyHookWrapper {
             HookKind::FinalAnswerValidator(h) => hooks.final_answer_validator.push(h.clone()),
             HookKind::AfterRun(h) => hooks.after_run.push(h.clone()),
             HookKind::OnAbort(h) => hooks.on_abort.push(h.clone()),
+            HookKind::ProviderError(h) => hooks.provider_error.push(h.clone()),
         }
     }
 }
@@ -1521,6 +1607,7 @@ impl HookKind {
             HookKind::FinalAnswerValidator(_) => "FinalAnswerValidator",
             HookKind::AfterRun(_) => "AfterRun",
             HookKind::OnAbort(_) => "OnAbort",
+            HookKind::ProviderError(_) => "ProviderError",
         }
     }
 }

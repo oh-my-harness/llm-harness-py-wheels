@@ -1378,10 +1378,10 @@ impl PyWorkflowEngine {
         Ok(slf)
     }
 
-    /// 注册一个外部事件 tool（`PyWaitForExternalEventTool`）。返回 self 以支持链式调用。
+    /// 注册一个外部交互 tool（wait / human approval / human input）。返回 self 以支持链式调用。
     fn with_external_tool<'a>(
         mut slf: PyRefMut<'a, Self>,
-        tool: &Bound<'_, PyWaitForExternalEventTool>,
+        tool: &Bound<'_, PyAny>,
     ) -> PyResult<PyRefMut<'a, Self>> {
         let arc = slf
             .engine
@@ -1392,7 +1392,17 @@ impl PyWorkflowEngine {
                 "engine is shared (running?); cannot add tool",
             )
         })?;
-        let t: Arc<dyn Tool> = tool.borrow().tool.clone();
+        let t: Arc<dyn Tool> = if let Ok(w) = tool.cast::<PyWaitForExternalEventTool>() {
+            w.borrow().tool.clone()
+        } else if let Ok(a) = tool.cast::<crate::core::pyeventstream::PyHumanApprovalTool>() {
+            a.borrow().tool.clone()
+        } else if let Ok(i) = tool.cast::<crate::core::pyeventstream::PyHumanInputTool>() {
+            i.borrow().tool.clone()
+        } else {
+            return Err(pyo3::exceptions::PyTypeError::new_err(
+                "expected a wait/approval/input tool",
+            ));
+        };
         slf.engine = Some(Arc::new(engine.with_tool(t)));
         Ok(slf)
     }
@@ -1442,6 +1452,7 @@ impl PyWorkflowEngine {
                 }
                 HookKind::AfterRun(h) => harness_hooks.after_run.push(h.clone()),
                 HookKind::OnAbort(h) => harness_hooks.on_abort.push(h.clone()),
+                HookKind::ProviderError(h) => harness_hooks.provider_error.push(h.clone()),
             }
         }
 

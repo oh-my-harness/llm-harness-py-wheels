@@ -10,7 +10,6 @@ This test requires the `test-utils` feature (senza.Agent + MockLlmClient).
 On production wheels it is auto-skipped by conftest.py.
 """
 
-import pytest
 import senza
 
 

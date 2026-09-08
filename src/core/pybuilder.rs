@@ -65,6 +65,8 @@ pub(crate) struct SpawnConfig {
     pub(crate) model: String,
     pub(crate) client: Arc<dyn llm_harness_loop::LlmClient>,
     pub(crate) session_dir: PathBuf,
+    /// 并发 sub-agent 上限；`None` = 不限（runtime 默认）。
+    pub(crate) max_concurrent: Option<usize>,
 }
 #[pymethods]
 impl PyHarnessBuilder {
@@ -290,6 +292,23 @@ impl PyHarnessBuilder {
         if let Some(b) = slf.builder.take() {
             let h = hook.borrow().as_after_turn_hook()?;
             slf.builder = Some(b.after_turn_hook(h));
+        }
+        Ok(slf)
+    }
+
+    /// 注册一个 `ProviderErrorHook`（无需包装在 Plugin 中）。
+    ///
+    /// provider 非瞬态错误（重试耗尽后仍失败）上抛前调用；hook 返回
+    /// `"retry"` 则同轮重试，返回 `"surface"` / `None` 则原样上抛。
+    /// 多次调用累积多个 hook——按注册顺序执行，首个 retry 生效。
+    #[pyo3(text_signature = "($self, hook)")]
+    fn provider_error_hook<'a>(
+        mut slf: PyRefMut<'a, Self>,
+        hook: &Bound<'_, PyHookWrapper>,
+    ) -> PyResult<PyRefMut<'a, Self>> {
+        if let Some(b) = slf.builder.take() {
+            let h = hook.borrow().as_provider_error_hook()?;
+            slf.builder = Some(b.provider_error_hook(h));
         }
         Ok(slf)
     }
@@ -636,17 +655,19 @@ impl PyHarnessBuilder {
     ///     model: Default model name for sub-agents.
     ///     provider: LLM provider for sub-agents (same as main agent's provider).
     ///     session_dir: Directory for sub-agent session JSONL files.
-    #[pyo3(text_signature = "($self, model, provider, session_dir)")]
+    #[pyo3(signature = (model, provider, session_dir, max_concurrent=None))]
     fn enable_spawn<'a>(
         mut slf: PyRefMut<'a, Self>,
         model: &str,
         provider: &Bound<'_, PyProvider>,
         session_dir: &str,
+        max_concurrent: Option<usize>,
     ) -> PyRefMut<'a, Self> {
         slf.spawn_config = Some(SpawnConfig {
             model: model.to_string(),
             client: provider.borrow().client.clone(),
             session_dir: PathBuf::from(session_dir),
+            max_concurrent,
         });
         slf
     }

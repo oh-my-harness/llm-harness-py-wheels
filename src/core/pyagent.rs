@@ -109,9 +109,18 @@ impl PyAgent {
     ///
     /// 通过 `py.detach()` 释放 GIL，让 tokio worker 线程在需要时
     /// 能 acquire GIL（例如执行 Python tool callback）。
-    fn prompt(&self, py: Python<'_>, text: &str) -> PyResult<String> {
+    #[pyo3(signature = (text, attachments=None))]
+    fn prompt(
+        &self,
+        py: Python<'_>,
+        text: &str,
+        attachments: Option<Vec<Bound<'_, crate::core::pytool::PyAttachment>>>,
+    ) -> PyResult<String> {
         let agent = self.agent.clone();
+        let has_attachments = attachments.as_ref().is_some_and(|l| !l.is_empty());
         let text = text.to_string();
+        let message = has_attachments
+            .then(|| crate::core::pyharness::user_message_from_py(&text, attachments));
         let rt = runtime(py);
 
         // 释放 GIL + panic 隔离 + 信号检查（Ctrl+C 可打断）。
@@ -119,10 +128,14 @@ impl PyAgent {
             py,
             rt,
             async move {
-                agent
-                    .prompt(text)
-                    .await
-                    .map_err(|e| crate::shared::pyerror::agent_error_to_pyerr(e))
+                let result = if let Some(message) = message {
+                    // Agent 只有 replace 语义的 prompt_with_messages；带附件时
+                    // 用它（调用方自行负责 transcript 预期）。
+                    agent.prompt_with_messages(vec![message]).await
+                } else {
+                    agent.prompt(text).await
+                };
+                result.map_err(|e| crate::shared::pyerror::agent_error_to_pyerr(e))
             },
             200,
         )?;

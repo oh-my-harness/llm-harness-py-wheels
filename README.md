@@ -97,6 +97,28 @@ print(harness.chat("用一句话解释闭包。"))
 `senza.extract_text(harness.prompt_and_collect(text))` —— 一步取回纯文本回复。
 如需逐 token 流式或原始事件，用 `stream_prompt()` 或 `prompt_and_collect()`。
 
+### 多模态附件（图片 / 文档）
+
+`prompt` / `chat` / `prompt_and_collect` / `steer` / `follow_up` / `next_turn`
+均支持 `attachments=` 参数（1.2.4+）：
+
+```python
+harness.chat(
+    "描述这张图",
+    attachments=[senza.image_url("https://example.com/i.png")],
+)
+harness.chat("总结这份文档", attachments=[senza.document_file("report.pdf")])
+```
+
+构造函数：`image_url(url)`、`image_base64(data, mime_type="image/png")`、
+`document_url(url, name=None)`、`document_file(path, name=None)`。
+端点需支持对应模态（图片 / 文档），否则 provider 返回 400。
+
+> **⚠️ `senza.Agent`（test-utils mock）的 `prompt(attachments=...)` 语义注意**：
+> 带附件时底层走 `prompt_with_messages`——**整个 transcript 被替换**；
+> 不带附件时是追加。生产路径 `AgentHarness.prompt()` 始终追加，不受影响。
+> 带附件的多轮对话请优先使用 `AgentHarness`。
+
 ### Workflow 示例
 
 ```python

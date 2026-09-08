@@ -9,3 +9,4 @@ docs/superpowers
 target
 .venv/
 *.sosenza_agent.egg-info/
+.env

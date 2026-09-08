@@ -32,6 +32,7 @@ async fn pytool_executes_sync_callback() {
             "echo".into(),
             schema,
             callback,
+            false,
         )) as Arc<dyn llm_harness_types::Tool>
     });
 

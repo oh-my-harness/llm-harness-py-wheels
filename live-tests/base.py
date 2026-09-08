@@ -102,6 +102,43 @@ def provider_or_skip() -> senza.Provider:
     return entries[0][1]
 
 
+def document_provider_or_skip() -> tuple[senza.Provider, str]:
+    """Return (provider, model) known to accept document (PDF) input, or skip.
+
+    Discovery order (verified by real requests 2026-08-29):
+    1. SENZA_DOCUMENT_BASE_URL / SENZA_DOCUMENT_MODEL / SENZA_DOCUMENT_API_KEY
+       — explicit override for a document-capable endpoint.
+    2. The repo `.env` enabled ANTHROPIC block (claude-sonnet via the local
+       gateway), which reads PDF URLs natively.
+    3. Otherwise skip — most gateways reject document parts.
+    """
+    import pytest
+
+    base = os.environ.get("SENZA_DOCUMENT_BASE_URL")
+    model = os.environ.get("SENZA_DOCUMENT_MODEL")
+    key = os.environ.get("SENZA_DOCUMENT_API_KEY")
+    if not base:
+        env_file = Path(__file__).resolve().parent.parent / ".env"
+        if env_file.exists():
+            vals: dict[str, str] = {}
+            for line in env_file.read_text().splitlines():
+                line = line.strip()
+                if line.startswith("#") or "=" not in line:
+                    continue
+                k, _, v = line.partition("=")
+                vals[k.strip()] = v.strip().strip('"').strip("'")
+            if vals.get("ANTHROPIC_API_KEY") and vals.get("ANTHROPIC_BASE_URL"):
+                base = vals["ANTHROPIC_BASE_URL"]
+                model = model or vals.get("ANTHROPIC_MODEL")
+                key = key or vals["ANTHROPIC_API_KEY"]
+    if not base or not key:
+        pytest.skip("no document-capable provider configured (set SENZA_DOCUMENT_BASE_URL)")
+    return (
+        senza.providers.openai(api_key=key, base_url=base, documents=True),
+        model,
+    )
+
+
 def make_harness(provider, customize=None, *, model=None):
     """Build an AgentHarness bound to a real provider.
 
@@ -114,9 +151,9 @@ def make_harness(provider, customize=None, *, model=None):
     return builder.build()
 
 
-def run_prompt(harness, text, timeout_ms=SINGLE_TURN_TIMEOUT_MS):
+def run_prompt(harness, text, timeout_ms=SINGLE_TURN_TIMEOUT_MS, attachments=None):
     """prompt_and_collect with an explicit per-call timeout."""
-    return harness.prompt_and_collect(text, timeout_ms=timeout_ms)
+    return harness.prompt_and_collect(text, timeout_ms=timeout_ms, attachments=attachments)
 
 
 def with_timeout(seconds, fn, *args, **kwargs):
